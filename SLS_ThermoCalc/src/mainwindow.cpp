@@ -264,12 +264,43 @@ bool MainWindow::parsePresetInfo(const QString& filePath, PresetInfo& info) {
 void MainWindow::onEngineChanged(int index) {
     int presetIndex = ui->comboEngine->itemData(index).toInt();
     
-    // 检查是否是"自定义参数"
-    if (presetIndex < 0 || presetIndex >= m_presets.size()) {
-        // 自定义参数模式，不更改当前配置
+    // 检查是否是"自定义参数"（-1）
+    if (presetIndex < 0) {
         ui->lblEngineInfo->setText("自定义参数模式\n手动设置所有参数");
         ui->textLog->append(QString("[%1] 选择: 自定义参数模式")
                                .arg(QDateTime::currentDateTime().toString("hh:mm:ss")));
+        return;
+    }
+    
+    // 如果 m_presets 为空，说明使用的是内置预设 (EngineType 枚举值)
+    if (m_presets.isEmpty()) {
+        // 使用内置预设
+        const EnginePreset* builtin = get_engine_preset(static_cast<EngineType>(presetIndex));
+        if (builtin) {
+            m_currentConfig = builtin->config;
+            
+            // 更新 UI
+            ui->spinChamberPressure->setValue(builtin->chamber_pressure);
+            ui->spinMixtureRatio->setValue(builtin->mixture_ratio);
+            // 初始焓转换：J/kg -> kJ/kg
+            ui->spinInitialEnthalpy->setValue(builtin->config.initial_enthalpy / 1000.0);
+            
+            QString info = QString("%1\n推力: %2 kN, 真空比冲: %3 s")
+                               .arg(builtin->description)
+                               .arg(builtin->thrust, 0, 'f', 1)
+                               .arg(builtin->specific_impulse_vac, 0, 'f', 1);
+            ui->lblEngineInfo->setText(info);
+            
+            ui->textLog->append(QString("[%1] 选择发动机: %2 (内置预设)")
+                                    .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
+                                    .arg(builtin->name));
+        }
+        return;
+    }
+    
+    // 使用 JSON 文件预设
+    if (presetIndex >= m_presets.size()) {
+        ui->lblEngineInfo->setText("自定义参数模式\n手动设置所有参数");
         return;
     }
     
@@ -308,12 +339,25 @@ void MainWindow::onMixtureRatioChanged(double value) {
 }
 
 void MainWindow::readInputParameters() {
+    // 确保配置已初始化（如果尚未初始化，使用 RS-25 作为默认）
+    if (m_currentConfig.num_species == 0) {
+        const EnginePreset* defaultPreset = get_engine_preset(ENGINE_RS25);
+        if (defaultPreset) {
+            m_currentConfig = defaultPreset->config;
+        }
+    }
+    
     // 燃烧室压强 (MPa -> atm)
     double pc_mpa = ui->spinChamberPressure->value();
     m_currentConfig.chamber_pressure = pc_mpa / 0.101325;  // 1 atm = 0.101325 MPa
 
     // 初始焓 (kJ/kg -> J/kg)
     m_currentConfig.initial_enthalpy = ui->spinInitialEnthalpy->value() * 1000.0;
+    
+    // 更新质量分数
+    double of_ratio = ui->spinMixtureRatio->value();
+    m_currentConfig.mass_fraction[0] = 1.0 / (1.0 + of_ratio);  // 燃料
+    m_currentConfig.mass_fraction[1] = of_ratio / (1.0 + of_ratio);  // 氧化剂
 }
 
 void MainWindow::onCalculate() {

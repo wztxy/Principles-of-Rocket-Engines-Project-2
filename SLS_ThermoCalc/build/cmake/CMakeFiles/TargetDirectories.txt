@@ -1,9 +1,0 @@
-/Users/zxy/Code/Principles-of-Rocket-Engines-Project-2/SLS_ThermoCalc/build/cmake/CMakeFiles/SLS_ThermoCalc.dir
-/Users/zxy/Code/Principles-of-Rocket-Engines-Project-2/SLS_ThermoCalc/build/cmake/CMakeFiles/edit_cache.dir
-/Users/zxy/Code/Principles-of-Rocket-Engines-Project-2/SLS_ThermoCalc/build/cmake/CMakeFiles/rebuild_cache.dir
-/Users/zxy/Code/Principles-of-Rocket-Engines-Project-2/SLS_ThermoCalc/build/cmake/CMakeFiles/list_install_components.dir
-/Users/zxy/Code/Principles-of-Rocket-Engines-Project-2/SLS_ThermoCalc/build/cmake/CMakeFiles/install.dir
-/Users/zxy/Code/Principles-of-Rocket-Engines-Project-2/SLS_ThermoCalc/build/cmake/CMakeFiles/install/local.dir
-/Users/zxy/Code/Principles-of-Rocket-Engines-Project-2/SLS_ThermoCalc/build/cmake/CMakeFiles/install/strip.dir
-/Users/zxy/Code/Principles-of-Rocket-Engines-Project-2/SLS_ThermoCalc/build/cmake/CMakeFiles/SLS_ThermoCalc_autogen_timestamp_deps.dir
-/Users/zxy/Code/Principles-of-Rocket-Engines-Project-2/SLS_ThermoCalc/build/cmake/CMakeFiles/SLS_ThermoCalc_autogen.dir
