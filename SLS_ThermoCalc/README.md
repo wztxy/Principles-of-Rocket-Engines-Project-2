@@ -89,15 +89,15 @@ $$
 - $\Phi_c = (-y_i + \ln c_i + \ln p - \ln n_g) \cdot c_i$
 - $y_i = -\mu_i / (RT)$ 为无量纲化学势
 
-### NASA 7系数多项式
-热力参数使用 NASA 7系数多项式计算：
+### NASA 9系数多项式
+热力参数使用 NASA 9系数多项式计算（来源：NASA CEA thermo.inp）：
 
 $$
-\frac{C_p}{R} = a_1 + a_2T + a_3T^2 + a_4T^3 + a_5T^4
+\frac{C_p}{R} = a_1 T^{-2} + a_2 T^{-1} + a_3 + a_4 T + a_5 T^2 + a_6 T^3 + a_7 T^4
 $$
 
 $$
-\frac{H}{RT} = a_1 + \frac{a_2}{2}T + \frac{a_3}{3}T^2 + \frac{a_4}{4}T^3 + \frac{a_5}{5}T^4 + \frac{a_6}{T}
+\frac{H}{RT} = -a_1 T^{-2} + a_2 \frac{\ln T}{T} + a_3 + \frac{a_4}{2} T + \frac{a_5}{3} T^2 + \frac{a_6}{4} T^3 + \frac{a_7}{5} T^4 + \frac{a_8}{T}
 $$
 
 ## 验证

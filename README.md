@@ -18,12 +18,6 @@ SLS ThermoCalc 是一个基于 Qt 开发的火箭发动机热力性能计算程�
 - 🧪 **多推进剂支持**：LOX/LH₂、LOX/CH₄、LOX/RP-1
 - 📈 **完整输出**：比冲、特征速度、推力系数、马赫数、比热比等
 
-### 截图
-
-<p align="center">
-  <img src="SLS_ThermoCalc/resources/icons/rocket.png" width="128" alt="App Icon">
-</p>
-
 ## 编译与运行
 
 ### 依赖
@@ -58,7 +52,7 @@ mingw32-make  # 或 nmake
 ## 项目结构
 
 ```
-SLS_ThermoCalc/           # 🚀 主程序 - Qt GUI 应用
+SLS_ThermoCalc/           # 主程序 - Qt GUI 应用
 ├── include/              # C 语言头文件
 │   ├── thermo_core.h     # 热力计算核心 API
 │   ├── propellant_db.h   # 推进剂数据库
@@ -72,10 +66,10 @@ SLS_ThermoCalc/           # 🚀 主程序 - Qt GUI 应用
 ├── presets/              # 发动机预设 JSON 文件
 └── ui/                   # Qt Designer UI 文件
 
-references/               # 📚 参考资料
-├── 公式、报告/           # LaTeX 报告和公式推导
-├── 热力计算-燃烧室+喷管/ # 命令行版计算程序原型
-├── 程序/                 # 早期测试程序
+references/               # 参考资料
+├── 公式、报告/             # LaTeX 报告和公式推导
+├── 热力计算-燃烧室+喷管/    # 命令行版计算程序原型
+├── 程序/                  # 早期测试程序
 └── RPA-4.0.7/            # RPA 软件参考配置
 ```
 
@@ -92,28 +86,24 @@ references/               # 📚 参考资料
 
 ### 热力参数
 
-使用 NASA 7 系数多项式计算热力参数（焓、熵、比热容）。
+使用 NASA 9 系数多项式计算热力参数（焓、熵、比热容），数据来源于 NASA CEA thermo.inp。
 
 详细公式推导见 `references/公式、报告/热力计算流程及公式.tex`。
 
 ## 发动机预设
 
-| 发动机 | 推进剂 | 燃烧室压强 | 比冲 | 推力 |
-|--------|--------|------------|------|------|
-| RS-25 (SSME) | LOX/LH₂ | 20.64 MPa | 452.3 s | 2,279 kN |
-| RL-10B2 | LOX/LH₂ | 4.36 MPa | 465.5 s | 110.1 kN |
-| J-2X | LOX/LH₂ | 12.7 MPa | 448 s | 1,307 kN |
-| Raptor 2 | LOX/CH₄ | 30 MPa | 350 s | 2,256 kN |
-| Vulcain-2 | LOX/LH₂ | 11.73 MPa | 429 s | 1,359 kN |
-| YF-77 | LOX/LH₂ | 10.1 MPa | 428 s | 700 kN |
+| 发动机       | 推进剂  | 燃烧室压强 | 比冲    | 推力     |
+| ------------ | ------- | ---------- | ------- | -------- |
+| RS-25 (SSME) | LOX/LH₂ | 20.64 MPa  | 452.3 s | 2,279 kN |
+| RL-10B2      | LOX/LH₂ | 4.36 MPa   | 465.5 s | 110.1 kN |
+| J-2X         | LOX/LH₂ | 12.7 MPa   | 448 s   | 1,307 kN |
+| Raptor 2     | LOX/CH₄ | 30 MPa     | 350 s   | 2,256 kN |
+| Vulcain-2    | LOX/LH₂ | 11.73 MPa  | 429 s   | 1,359 kN |
+| YF-77        | LOX/LH₂ | 10.1 MPa   | 428 s   | 700 kN   |
 
 ## 许可证
 
 本项目采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可证。
-
-- ✅ 允许：复制、分发、修改、演绎
-- ❌ 禁止：商业使用
-- 📝 要求：署名、相同方式共享
 
 ## 致谢
 
@@ -121,10 +111,6 @@ references/               # 📚 参考资料
 - RPA (Rocket Propulsion Analysis) 软件参考
 - Qt 开源框架
 
-## 作者
-
-wztxy - 2025
-
 ---
 
-*本项目为北京航空航天大学火箭发动机原理课程大作业*
+_本项目为北京航空航天大学宇航学院宇航推进系火箭发动机原理课程大作业_
