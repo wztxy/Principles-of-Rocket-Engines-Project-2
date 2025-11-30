@@ -84,6 +84,10 @@ private:
     QStringList getPresetsFolderPaths();
     bool parsePresetInfo(const QString& filePath, PresetInfo& info);
     
+    // 自动创建默认预设文件
+    QString ensurePresetsFolder();
+    void createDefaultPresets(const QString& presetsDir);
+    
     // 从界面读取参数
     void readInputParameters();
     

@@ -168,30 +168,182 @@ QStringList MainWindow::getPresetsFolderPaths() {
     return paths;
 }
 
+QString MainWindow::ensurePresetsFolder() {
+    QStringList searchPaths = getPresetsFolderPaths();
+    
+    // 首先查找已存在的预设文件夹
+    for (const QString& path : searchPaths) {
+        QDir dir(path);
+        if (dir.exists()) {
+            return dir.absolutePath();
+        }
+    }
+    
+    // 没有找到，创建一个预设文件夹
+    // 优先在应用程序目录附近创建
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString presetsDir;
+    
+#ifdef Q_OS_MAC
+    // macOS: 在 SLS_ThermoCalc 目录下创建
+    presetsDir = appDir + "/../../../../presets";
+#else
+    // Windows/Linux: 在可执行文件旁边创建
+    presetsDir = appDir + "/presets";
+#endif
+    
+    QDir dir;
+    if (dir.mkpath(presetsDir)) {
+        ui->textLog->append(QString("[信息] 创建预设文件夹: %1").arg(QDir(presetsDir).absolutePath()));
+        return QDir(presetsDir).absolutePath();
+    }
+    
+    // 如果失败，尝试在当前工作目录创建
+    presetsDir = QDir::currentPath() + "/presets";
+    if (dir.mkpath(presetsDir)) {
+        ui->textLog->append(QString("[信息] 创建预设文件夹: %1").arg(QDir(presetsDir).absolutePath()));
+        return QDir(presetsDir).absolutePath();
+    }
+    
+    return QString();
+}
+
+void MainWindow::createDefaultPresets(const QString& presetsDir) {
+    // 检查是否已有预设文件
+    QDir dir(presetsDir);
+    QStringList existing = dir.entryList(QStringList() << "*.json", QDir::Files);
+    
+    // 过滤掉模板文件
+    int realPresets = 0;
+    for (const QString& f : existing) {
+        if (!f.contains("template", Qt::CaseInsensitive) && 
+            !f.contains("README", Qt::CaseInsensitive)) {
+            realPresets++;
+        }
+    }
+    
+    if (realPresets > 0) {
+        // 已有预设文件，不需要创建
+        return;
+    }
+    
+    ui->textLog->append("[信息] 正在创建默认预设文件...");
+    
+    // 辅助函数：创建预设JSON
+    auto createPresetJson = [](const QString& name, const QString& desc, 
+                               double thrust, double isp, double pc, double of, 
+                               double enthalpy, const QString& propType, double pe) -> QByteArray {
+        QJsonObject root;
+        root["version"] = 1;
+        root["application"] = "SLS_ThermoCalc";
+        
+        QJsonObject engine;
+        engine["name"] = name;
+        engine["description"] = desc;
+        engine["thrust_kN"] = thrust;
+        engine["specificImpulse_vac_s"] = isp;
+        root["engineDefinition"] = engine;
+        
+        QJsonObject combustor;
+        QJsonObject pressure;
+        pressure["value"] = pc;
+        pressure["units"] = "MPa";
+        combustor["chamberPressure"] = pressure;
+        combustor["mixtureRatio"] = of;
+        combustor["initialEnthalpy_kJ_kg"] = enthalpy;
+        root["combustorConditions"] = combustor;
+        
+        QJsonObject propellant;
+        propellant["type"] = propType;
+        QJsonObject ox, fuel;
+        ox["name"] = "O2(L)";
+        ox["formula"] = "O2";
+        propellant["oxidizer"] = ox;
+        if (propType == "LOX_CH4") {
+            fuel["name"] = "CH4(L)";
+            fuel["formula"] = "CH4";
+        } else {
+            fuel["name"] = "H2(L)";
+            fuel["formula"] = "H2";
+        }
+        propellant["fuel"] = fuel;
+        root["propellant"] = propellant;
+        
+        QJsonObject nozzle;
+        nozzle["exitPressure_atm"] = pe;
+        nozzle["flowType"] = "equilibrium";
+        root["nozzleConditions"] = nozzle;
+        
+        QJsonObject thermo;
+        thermo["method"] = "minimumGibbsFreeEnergy";
+        thermo["coefficients"] = "NASA-9";
+        root["thermodynamicModel"] = thermo;
+        
+        return QJsonDocument(root).toJson(QJsonDocument::Indented);
+    };
+    
+    // 写入预设文件
+    auto writePreset = [&](const QString& filename, const QByteArray& content) {
+        QFile file(presetsDir + "/" + filename);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            file.write(content);
+            file.close();
+            return true;
+        }
+        return false;
+    };
+    
+    int created = 0;
+    
+    // RS-25 (SSME) - SLS核心级
+    if (writePreset("RS-25_SSME.json", 
+        createPresetJson("RS-25 (SSME)", "Space Shuttle Main Engine - SLS Core Stage (LOX/LH2)",
+                        2279, 452.3, 20.64, 6.03, -987.0, "LOX_LH2", 0.05))) created++;
+    
+    // RL-10B2 - 上面级
+    if (writePreset("RL-10B2.json",
+        createPresetJson("RL-10B2", "Pratt & Whitney RL10B-2 - Upper Stage (LOX/LH2)",
+                        110.1, 465.5, 4.36, 5.88, -987.0, "LOX_LH2", 0.001))) created++;
+    
+    // J-2X - 探索上面级
+    if (writePreset("J-2X.json",
+        createPresetJson("J-2X", "Rocketdyne J-2X - Exploration Upper Stage (LOX/LH2)",
+                        1310, 448, 9.2, 5.5, -987.0, "LOX_LH2", 0.001))) created++;
+    
+    // SpaceX Raptor (LOX/CH4)
+    if (writePreset("Raptor.json",
+        createPresetJson("SpaceX Raptor", "Full-Flow Staged Combustion Engine (LOX/CH4)",
+                        2260, 363, 30.0, 3.6, -2875.72, "LOX_CH4", 1.0))) created++;
+    
+    // YF-77 - 长征五号
+    if (writePreset("YF-77.json",
+        createPresetJson("YF-77", "长征五号芯一级发动机 (LOX/LH2)",
+                        700, 430, 10.2, 5.5, -987.0, "LOX_LH2", 0.1))) created++;
+    
+    // Vulcain-2 - 阿丽亚娜5
+    if (writePreset("Vulcain-2.json",
+        createPresetJson("Vulcain-2", "Ariane 5 Core Stage Engine (LOX/LH2)",
+                        1350, 434, 11.7, 6.1, -987.0, "LOX_LH2", 0.05))) created++;
+    
+    ui->textLog->append(QString("[信息] 已创建 %1 个默认预设文件").arg(created));
+}
+
 void MainWindow::loadPresetsFromFolder() {
     m_presets.clear();
     ui->comboEngine->clear();
     
-    QStringList searchPaths = getPresetsFolderPaths();
-    QString presetsDir;
-    
-    // 查找存在的预设文件夹
-    for (const QString& path : searchPaths) {
-        QDir dir(path);
-        if (dir.exists()) {
-            presetsDir = dir.absolutePath();
-            break;
-        }
-    }
+    // 确保预设文件夹存在，必要时创建
+    QString presetsDir = ensurePresetsFolder();
     
     if (presetsDir.isEmpty()) {
-        ui->textLog->append("[警告] 未找到预设文件夹，使用默认配置");
-        // 添加默认的内置预设
-        ui->comboEngine->addItem("RS-25 (SSME) - SLS核心级", ENGINE_RS25);
-        ui->comboEngine->addItem("RL-10B2 - 上面级", ENGINE_RL10);
-        ui->comboEngine->addItem("J-2X - 探索上面级", ENGINE_J2X);
+        ui->textLog->append("[错误] 无法创建或找到预设文件夹");
+        // 添加自定义选项作为唯一选择
+        ui->comboEngine->addItem("── 自定义参数 ──", -1);
         return;
     }
+    
+    // 如果没有预设文件，创建默认预设
+    createDefaultPresets(presetsDir);
     
     ui->textLog->append(QString("[信息] 从 %1 加载预设...").arg(presetsDir));
     
@@ -271,32 +423,6 @@ void MainWindow::onEngineChanged(int index) {
         return;
     }
     
-    // 如果 m_presets 为空，说明使用的是内置预设 (EngineType 枚举值)
-    if (m_presets.isEmpty()) {
-        // 使用内置预设
-        const EnginePreset* builtin = get_engine_preset(static_cast<EngineType>(presetIndex));
-        if (builtin) {
-            m_currentConfig = builtin->config;
-            
-            // 更新 UI
-            ui->spinChamberPressure->setValue(builtin->chamber_pressure);
-            ui->spinMixtureRatio->setValue(builtin->mixture_ratio);
-            // 初始焓转换：J/kg -> kJ/kg
-            ui->spinInitialEnthalpy->setValue(builtin->config.initial_enthalpy / 1000.0);
-            
-            QString info = QString("%1\n推力: %2 kN, 真空比冲: %3 s")
-                               .arg(builtin->description)
-                               .arg(builtin->thrust, 0, 'f', 1)
-                               .arg(builtin->specific_impulse_vac, 0, 'f', 1);
-            ui->lblEngineInfo->setText(info);
-            
-            ui->textLog->append(QString("[%1] 选择发动机: %2 (内置预设)")
-                                    .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
-                                    .arg(builtin->name));
-        }
-        return;
-    }
-    
     // 使用 JSON 文件预设
     if (presetIndex >= m_presets.size()) {
         ui->lblEngineInfo->setText("自定义参数模式\n手动设置所有参数");
@@ -319,7 +445,7 @@ void MainWindow::onEngineChanged(int index) {
                                 .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
                                 .arg(preset.name));
     } else {
-        // 加载失败，使用默认配置
+        // 加载失败
         QMessageBox::warning(this, "加载失败", 
                             QString("无法加载预设文件: %1").arg(preset.filePath));
     }
