@@ -51,6 +51,13 @@ void MainWindow::setupUI() {
                                  "等熵指数 γs",
                                  "声速 (m/s)",
                                  "特征速度 c* (m/s)",
+                                 "冻结比热 cp,f (kJ/kg/K)",
+                                 "冻结比热比 γf",
+                                 "冻结声速 (m/s)",
+                                 "气体常数 R (J/kg/K)",
+                                 "粘性系数 μ (Pa·s)",
+                                 "导热系数 λ (W/m/K)",
+                                 "普朗特数 Pr",
                                  "收敛状态"};
 
     ui->tableChamber->setRowCount(chamberParams.size());
@@ -61,7 +68,11 @@ void MainWindow::setupUI() {
 
     // 初始化喷管结果表
     QStringList nozzleParams = {"出口温度 (K)", "出口压强 (atm)", "出口速度 (m/s)", "比冲 Isp (s)",
-                                "马赫数",       "推力系数 Cf",    "面积比 ε",       "收敛状态"};
+                                "真空比冲 Isp,vac (s)", "马赫数", "推力系数 Cf", 
+                                "质量流系数 Γ", "平均等熵指数 γm",
+                                "压力比 pc/pe", "出口密度 (kg/m³)", "出口声速 (m/s)",
+                                "喉部温度 (K)", "喉部压力 (atm)", "喉部速度 (m/s)",
+                                "收敛状态"};
 
     ui->tableNozzle->setRowCount(nozzleParams.size());
     for (int i = 0; i < nozzleParams.size(); ++i) {
@@ -236,6 +247,13 @@ void MainWindow::displayChamberResults(const ChamberResult& chamber) {
     ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.gamma_s, 4));
     ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.sound_speed, 1));
     ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.char_velocity, 1));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.cp_frozen / 1000.0, 4));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.gamma_frozen, 4));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.sound_speed_frozen, 1));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.R_specific, 2));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.viscosity * 1e6, 4) + " ×10⁻⁶");
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.conductivity, 4));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.prandtl, 4));
     ui->tableChamber->item(row++, 1)->setText(chamber.converged ? "✓ 收敛" : "✗ 未收敛");
 }
 
@@ -245,9 +263,17 @@ void MainWindow::displayNozzleResults(const NozzleResult& nozzle) {
     ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_pressure, 4));
     ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_velocity, 1));
     ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.specific_impulse, 1));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.specific_impulse_vac, 1));
     ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.mach_number, 2));
     ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.thrust_coefficient, 4));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.area_ratio, 2));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.mass_flow_coefficient, 4));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.mean_gamma, 4));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.pressure_ratio, 2));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_density, 4));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_sound_speed, 1));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.throat_temperature, 2));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.throat_pressure, 4));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.throat_velocity, 1));
     ui->tableNozzle->item(row++, 1)->setText(nozzle.converged ? "✓ 收敛" : "✗ 未收敛");
 }
 
@@ -270,7 +296,7 @@ void MainWindow::onExportResults() {
 
     QTextStream out(&file);
 
-    out << "========================================";
+    out << "========================================\n";
     out << "SLS火箭发动机热力计算结果\n";
     out << "计算时间: " << QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss") << "\n";
     out << "========================================\n\n";
@@ -281,16 +307,51 @@ void MainWindow::onExportResults() {
     out << QString("燃烧室压强: %1 MPa\n").arg(ui->spinChamberPressure->value());
     out << QString("喷管出口压强: %1 atm\n\n").arg(ui->spinExitPressure->value());
 
-    out << "【燃烧室结果】\n";
-    out << QString("燃烧温度: %1 K\n").arg(m_lastResult.chamber.temperature, 0, 'f', 2);
+    out << "【燃烧室热力参数】\n";
+    out << QString("燃烧温度 Tc: %1 K\n").arg(m_lastResult.chamber.temperature, 0, 'f', 2);
+    out << QString("总焓 H: %1 kJ/mol\n").arg(m_lastResult.chamber.total_enthalpy / 1000.0, 0, 'f', 3);
+    out << QString("总熵 S: %1 kJ/mol/K\n").arg(m_lastResult.chamber.total_entropy / 1000.0, 0, 'f', 4);
+    out << QString("平均分子量 M: %1 g/mol\n").arg(m_lastResult.chamber.mean_molecular_weight, 0, 'f', 3);
+    out << QString("密度 ρ: %1 kg/m³\n").arg(m_lastResult.chamber.density, 0, 'f', 3);
+    out << QString("平衡定压比热 cp: %1 kJ/mol/K\n").arg(m_lastResult.chamber.cp / 1000.0, 0, 'f', 4);
+    out << QString("平衡定容比热 cv: %1 kJ/mol/K\n").arg(m_lastResult.chamber.cv / 1000.0, 0, 'f', 4);
     out << QString("比热比 γ: %1\n").arg(m_lastResult.chamber.gamma, 0, 'f', 4);
     out << QString("等熵指数 γs: %1\n").arg(m_lastResult.chamber.gamma_s, 0, 'f', 4);
-    out << QString("特征速度 c*: %1 m/s\n\n").arg(m_lastResult.chamber.char_velocity, 0, 'f', 1);
+    out << QString("平衡声速 as: %1 m/s\n").arg(m_lastResult.chamber.sound_speed, 0, 'f', 1);
+    out << QString("特征速度 c*: %1 m/s\n").arg(m_lastResult.chamber.char_velocity, 0, 'f', 1);
+    out << QString("冻结定压比热 cp,f: %1 kJ/mol/K\n").arg(m_lastResult.chamber.cp_frozen / 1000.0, 0, 'f', 4);
+    out << QString("冻结比热比 γf: %1\n").arg(m_lastResult.chamber.gamma_frozen, 0, 'f', 4);
+    out << QString("冻结声速 as,f: %1 m/s\n").arg(m_lastResult.chamber.sound_speed_frozen, 0, 'f', 1);
+    out << QString("等价气体常数 R: %1 J/kg/K\n").arg(m_lastResult.chamber.R_specific, 0, 'f', 2);
+    out << QString("粘性系数 μ: %1 Pa·s\n").arg(m_lastResult.chamber.viscosity, 0, 'e', 4);
+    out << QString("导热系数 λ: %1 W/m/K\n").arg(m_lastResult.chamber.conductivity, 0, 'f', 4);
+    out << QString("普朗特数 Pr: %1\n\n").arg(m_lastResult.chamber.prandtl, 0, 'f', 4);
 
-    out << "【喷管结果】\n";
-    out << QString("出口温度: %1 K\n").arg(m_lastResult.nozzle.exit_temperature, 0, 'f', 2);
-    out << QString("出口速度: %1 m/s\n").arg(m_lastResult.nozzle.exit_velocity, 0, 'f', 1);
+    out << "【喷管性能参数】\n";
+    out << QString("出口温度 Te: %1 K\n").arg(m_lastResult.nozzle.exit_temperature, 0, 'f', 2);
+    out << QString("出口压力 pe: %1 atm\n").arg(m_lastResult.nozzle.exit_pressure, 0, 'f', 4);
+    out << QString("出口速度 ue: %1 m/s\n").arg(m_lastResult.nozzle.exit_velocity, 0, 'f', 1);
     out << QString("比冲 Isp: %1 s\n").arg(m_lastResult.nozzle.specific_impulse, 0, 'f', 1);
+    out << QString("真空比冲 Isp,vac: %1 s\n").arg(m_lastResult.nozzle.specific_impulse_vac, 0, 'f', 1);
+    out << QString("马赫数 Me: %1\n").arg(m_lastResult.nozzle.mach_number, 0, 'f', 2);
+    out << QString("推力系数 CF: %1\n").arg(m_lastResult.nozzle.thrust_coefficient, 0, 'f', 4);
+    out << QString("质量流系数 Γ: %1\n").arg(m_lastResult.nozzle.mass_flow_coefficient, 0, 'f', 4);
+    out << QString("平均等熵指数 γm: %1\n").arg(m_lastResult.nozzle.mean_gamma, 0, 'f', 4);
+    out << QString("压力比 pc/pe: %1\n").arg(m_lastResult.nozzle.pressure_ratio, 0, 'f', 2);
+    out << QString("出口密度 ρe: %1 kg/m³\n").arg(m_lastResult.nozzle.exit_density, 0, 'f', 4);
+    out << QString("出口声速 ae: %1 m/s\n").arg(m_lastResult.nozzle.exit_sound_speed, 0, 'f', 1);
+    out << QString("喉部温度 T*: %1 K\n").arg(m_lastResult.nozzle.throat_temperature, 0, 'f', 2);
+    out << QString("喉部压力 p*: %1 atm\n").arg(m_lastResult.nozzle.throat_pressure, 0, 'f', 4);
+    out << QString("喉部速度 u*: %1 m/s\n\n").arg(m_lastResult.nozzle.throat_velocity, 0, 'f', 1);
+    
+    out << "【平衡组分】\n";
+    QStringList speciesNames = {"H", "H2", "H2O", "O", "O2", "OH"};
+    for (int i = 0; i < qMin(m_currentConfig.num_species, 6); ++i) {
+        out << QString("%1: 燃烧室 %2, 出口 %3\n")
+               .arg(speciesNames[i], -6)
+               .arg(m_lastResult.chamber.mole_fractions[i], 0, 'e', 4)
+               .arg(m_lastResult.nozzle.mole_fractions[i], 0, 'e', 4);
+    }
 
     file.close();
 

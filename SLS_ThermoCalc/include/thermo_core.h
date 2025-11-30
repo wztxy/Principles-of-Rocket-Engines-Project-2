@@ -63,14 +63,28 @@ typedef struct {
     double mole_fractions[MAX_SPECIES];         /* 平衡组分摩尔数 */
     double total_enthalpy;                      /* 总焓 (J/kg) */
     double total_entropy;                       /* 总熵 (J/(kg·K)) */
-    double mean_molecular_weight;               /* 平均分子量 (g/mol) */
+    double mean_molecular_weight;               /* 平均分子量 M_wm (g/mol) */
+    double gas_molecular_weight;                /* 气相平均分子量 M_wg (g/mol) */
     double density;                             /* 密度 (kg/m³) */
-    double cp;                                  /* 定压比热 (J/(kg·K)) */
-    double cv;                                  /* 定容比热 (J/(kg·K)) */
-    double gamma;                               /* 比热比 */
-    double gamma_s;                             /* 等熵指数 */
-    double sound_speed;                         /* 声速 (m/s) */
-    double char_velocity;                       /* 特征速度 (m/s) */
+    double cp;                                  /* 平衡定压比热 c_p (J/(kg·K)) */
+    double cv;                                  /* 平衡定容比热 c_v (J/(kg·K)) */
+    double cp_frozen;                           /* 冻结定压比热 c_pf (J/(kg·K)) */
+    double cv_frozen;                           /* 冻结定容比热 c_vf (J/(kg·K)) */
+    double gamma;                               /* 平衡比热比 γ */
+    double gamma_frozen;                        /* 冻结比热比 γ_f */
+    double gamma_s;                             /* 等熵指数 γ_s */
+    double sound_speed;                         /* 平衡声速 a_s (m/s) */
+    double sound_speed_frozen;                  /* 冻结声速 a_sf (m/s) */
+    double char_velocity;                       /* 特征速度 c* (m/s) */
+    double R_specific;                          /* 等价气体常数 R_m (J/(kg·K)) */
+    double R_gas;                               /* 气相气体常数 R_g (J/(kg·K)) */
+    double viscosity;                           /* 粘性系数 μ (Pa·s) */
+    double conductivity;                        /* 导热系数 λ (W/(m·K)) */
+    double prandtl;                             /* 普朗特数 Pr */
+    double condensed_mass_frac;                 /* 凝相质量分数 Y_c */
+    double gas_mass_frac;                       /* 气相质量分数 Y_g */
+    double dlnv_dlnT_p;                         /* (∂ln v/∂ln T)_p */
+    double dlnv_dlnp_T;                         /* (∂ln v/∂ln p)_T */
     int converged;                              /* 是否收敛 */
 } ChamberResult;
 
@@ -81,12 +95,20 @@ typedef struct {
     double exit_temperature;                    /* 出口温度 (K) */
     double exit_pressure;                       /* 出口压强 (atm) */
     double mole_fractions[MAX_SPECIES];         /* 出口组分 */
-    double exit_velocity;                       /* 出口速度 (m/s) */
-    double specific_impulse;                    /* 比冲 (s) */
-    double thrust_coefficient;                  /* 推力系数 */
-    double mass_flow_rate;                      /* 质量流量系数 */
-    double area_ratio;                          /* 面积比 */
-    double mach_number;                         /* 马赫数 */
+    double exit_velocity;                       /* 出口速度 u_e (m/s) */
+    double specific_impulse;                    /* 比冲 I_sp (s) */
+    double specific_impulse_vac;                /* 真空比冲 I_sp,vac (s) */
+    double thrust_coefficient;                  /* 推力系数 C_F */
+    double mass_flow_coefficient;               /* 质量流量系数 Γ */
+    double area_ratio;                          /* 面积比 ε */
+    double mach_number;                         /* 马赫数 Ma */
+    double mean_gamma;                          /* 平均等熵指数 γ̄ (公式69) */
+    double exit_density;                        /* 出口密度 ρ_e (kg/m³) */
+    double exit_sound_speed;                    /* 出口声速 a_e (m/s) */
+    double throat_temperature;                  /* 喉部温度 T_t (K) */
+    double throat_pressure;                     /* 喉部压强 p_t (atm) */
+    double throat_velocity;                     /* 喉部速度 u_t (m/s) */
+    double pressure_ratio;                      /* 压强比 p_e/p_c */
     int converged;                              /* 是否收敛 */
 } NozzleResult;
 

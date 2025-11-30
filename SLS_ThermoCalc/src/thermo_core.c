@@ -411,10 +411,11 @@ void calc_thermo_properties(const PropellantInput* input,
     int N = input->num_species;
     int M = input->num_elements;
     int L = input->num_condensed;
-    int i;
+    int i, j;
     double ng = 0.0;
     double mass_total = 0.0;
     double mass_gas = 0.0;
+    double mass_condensed = 0.0;
     
     /* 计算气相总摩尔数 */
     for (i = L; i < N; i++) {
@@ -429,16 +430,31 @@ void calc_thermo_properties(const PropellantInput* input,
             M_i[i] += input->element_weight[k] * input->Aij[k][i];
         }
         mass_total += moles[i] * M_i[i];
-        if (i >= L) {
+        if (i < L) {
+            mass_condensed += moles[i] * M_i[i];
+        } else {
             mass_gas += moles[i] * M_i[i];
         }
     }
     
-    /* 平均分子量 (g/mol) */
-    result->mean_molecular_weight = mass_total / (ng > 0 ? ng : 1);
+    /* 凝相、气相质量分数 (公式22) */
+    result->condensed_mass_frac = mass_condensed / (mass_total > 0 ? mass_total : 1.0);
+    result->gas_mass_frac = 1.0 - result->condensed_mass_frac;
     
-    /* 密度 (kg/m³) */
+    /* 平均分子量 M_wm = 1/n_g (公式23) */
+    result->mean_molecular_weight = mass_total / (ng > 0 ? ng : 1) * 1000.0; /* g/mol */
+    
+    /* 气相平均分子量 M_wg (公式26) */
+    result->gas_molecular_weight = mass_gas / (ng > 0 ? ng : 1) * 1000.0; /* g/mol */
+    
+    /* 密度 (公式24) */
     result->density = (p * ATM_TO_PA) / (ng * R_UNIVERSAL * T);
+    
+    /* 等价气体常数 R_m = R_0 * n_g (公式27) */
+    result->R_specific = R_UNIVERSAL * ng * 1000.0; /* J/(kg·K) */
+    
+    /* 气相气体常数 R_g (公式28) */
+    result->R_gas = R_UNIVERSAL / (result->gas_molecular_weight / 1000.0); /* J/(kg·K) */
     
     /* 总焓 */
     result->total_enthalpy = 0.0;
@@ -446,7 +462,7 @@ void calc_thermo_properties(const PropellantInput* input,
         result->total_enthalpy += moles[i] * calc_enthalpy(&input->nasa9[i], T);
     }
     
-    /* 总熵 */
+    /* 总熵 (公式40) */
     result->total_entropy = 0.0;
     for (i = 0; i < N; i++) {
         result->total_entropy += moles[i] * calc_entropy(&input->nasa9[i], T);
@@ -459,11 +475,21 @@ void calc_thermo_properties(const PropellantInput* input,
     }
     result->total_entropy -= R_UNIVERSAL * ng * log(p);
     
-    /* 定压比热 (冻结) */
+    /* 冻结定压比热 c_pf (公式35) */
     double cp_frozen = 0.0;
     for (i = 0; i < N; i++) {
         cp_frozen += moles[i] * calc_cp(&input->nasa9[i], T);
     }
+    result->cp_frozen = cp_frozen;
+    
+    /* 冻结定容比热 c_vf (公式36) */
+    result->cv_frozen = cp_frozen - ng * R_UNIVERSAL;
+    
+    /* 冻结比热比 γ_f (公式37) */
+    result->gamma_frozen = result->cp_frozen / result->cv_frozen;
+    
+    /* 冻结声速 a_sf (公式38) */
+    result->sound_speed_frozen = sqrt(result->gamma_frozen * ng * R_UNIVERSAL * T);
     
     /* 计算偏微分用于平衡比热 */
     double dlnn_dlnT[MAX_SPECIES], dlnng_dlnT;
@@ -471,7 +497,7 @@ void calc_thermo_properties(const PropellantInput* input,
     calc_partial_derivatives_T(input, T, p, moles, dlnn_dlnT, &dlnng_dlnT);
     calc_partial_derivatives_p(input, T, p, moles, dlnn_dlnp, &dlnng_dlnp);
     
-    /* 平衡定压比热 */
+    /* 平衡定压比热 (公式30) */
     double cp_eq = cp_frozen;
     for (i = 0; i < N; i++) {
         double H_i = calc_enthalpy(&input->nasa9[i], T);
@@ -479,26 +505,110 @@ void calc_thermo_properties(const PropellantInput* input,
     }
     result->cp = cp_eq;
     
-    /* 偏导数 */
+    /* 偏导数 (公式29) */
     double dlnv_dlnT = 1.0 + dlnng_dlnT;
     double dlnv_dlnp = -1.0 + dlnng_dlnp;
+    result->dlnv_dlnT_p = dlnv_dlnT;
+    result->dlnv_dlnp_T = dlnv_dlnp;
     
-    /* 定容比热 */
+    /* 平衡定容比热 (公式31) */
     result->cv = result->cp + ng * R_UNIVERSAL * dlnv_dlnT * dlnv_dlnT / dlnv_dlnp;
     
-    /* 比热比 */
+    /* 平衡比热比 (公式32) */
     result->gamma = result->cp / result->cv;
     
-    /* 等熵指数 */
+    /* 等熵指数 (公式33) */
     result->gamma_s = -result->gamma / dlnv_dlnp;
     
-    /* 声速 */
+    /* 平衡声速 (公式34) */
     result->sound_speed = sqrt(result->gamma_s * ng * R_UNIVERSAL * T);
     
-    /* 特征速度 */
+    /* 特征速度 (公式47-48) */
     double Gamma = sqrt(result->gamma_s * pow(2.0 / (result->gamma_s + 1.0), 
                         (result->gamma_s + 1.0) / (result->gamma_s - 1.0)));
-    result->char_velocity = sqrt(T * R_UNIVERSAL / result->mean_molecular_weight * 1000.0) / Gamma;
+    result->char_velocity = sqrt(T * R_UNIVERSAL / (result->mean_molecular_weight / 1000.0)) / Gamma;
+    
+    /* ============ 输运性质计算 (公式41-46) ============ */
+    
+    /* 粘性系数计算 - 简化的Wilke混合规则 */
+    double mu_i[MAX_SPECIES];
+    double chi_i[MAX_SPECIES];  /* 摩尔分数 */
+    
+    /* L-J 特征参数 (简化，使用经验公式) */
+    /* sigma (Å), epsilon/k (K) 来自附录 */
+    double sigma[MAX_SPECIES];
+    double eps_k[MAX_SPECIES];
+    
+    /* 简化假设：基于分子量估算 L-J 参数 */
+    for (i = L; i < N; i++) {
+        chi_i[i] = moles[i] / ng;
+        
+        /* 经验公式估算 sigma 和 epsilon/k */
+        double M_w = M_i[i] * 1000.0; /* g/mol */
+        sigma[i] = 2.5 + 0.3 * pow(M_w, 0.333);  /* 近似 */
+        eps_k[i] = 30.0 + 5.0 * M_w;  /* 近似 */
+        
+        /* 折算温度 */
+        double T_star = T / eps_k[i];
+        
+        /* 碰撞积分 Omega_mu 近似公式 */
+        double Omega_mu = 1.16145 / pow(T_star, 0.14874) + 
+                          0.52487 / exp(0.77320 * T_star) +
+                          2.16178 / exp(2.43787 * T_star);
+        
+        /* 粘度 (公式42) Pa·s */
+        mu_i[i] = 2.6693e-6 * sqrt(M_w * T) / (sigma[i] * sigma[i] * Omega_mu);
+    }
+    
+    /* Wilke 混合规则 (公式43-44) */
+    double mu_mix = 0.0;
+    for (i = L; i < N; i++) {
+        double sum_phi = 0.0;
+        for (j = L; j < N; j++) {
+            double M_wi = M_i[i] * 1000.0;
+            double M_wj = M_i[j] * 1000.0;
+            double phi_ij = (1.0 / sqrt(8.0)) * pow(1.0 + M_wi / M_wj, -0.5) *
+                           pow(1.0 + sqrt(mu_i[i] / mu_i[j]) * pow(M_wj / M_wi, 0.25), 2.0);
+            sum_phi += chi_i[j] * phi_ij;
+        }
+        if (sum_phi > 0) {
+            mu_mix += chi_i[i] * mu_i[i] / sum_phi;
+        }
+    }
+    result->viscosity = mu_mix;
+    
+    /* 导热系数 (公式45-46) */
+    double lambda_i[MAX_SPECIES];
+    for (i = L; i < N; i++) {
+        double M_w = M_i[i] * 1000.0;
+        double cp_i = calc_cp(&input->nasa9[i], T);
+        /* Eucken 修正公式 */
+        lambda_i[i] = mu_i[i] * (1.32 * cp_i / M_w + 0.45 * R_UNIVERSAL / M_w) * 100.0;
+    }
+    
+    /* 混合导热系数 */
+    double lambda_mix = 0.0;
+    for (i = L; i < N; i++) {
+        double sum_term = 0.0;
+        for (j = L; j < N; j++) {
+            if (j != i && chi_i[i] > MIN_MOLE_FRAC) {
+                double M_wi = M_i[i] * 1000.0;
+                double M_wj = M_i[j] * 1000.0;
+                double phi_ij = (1.0 / sqrt(8.0)) * pow(1.0 + M_wi / M_wj, -0.5) *
+                               pow(1.0 + sqrt(mu_i[i] / mu_i[j]) * pow(M_wj / M_wi, 0.25), 2.0);
+                sum_term += 1.065 * chi_i[j] / chi_i[i] * phi_ij;
+            }
+        }
+        lambda_mix += lambda_i[i] / (1.0 + sum_term);
+    }
+    result->conductivity = lambda_mix;
+    
+    /* 普朗特数 (公式47) */
+    if (result->conductivity > 0) {
+        result->prandtl = result->viscosity * result->cp / result->conductivity;
+    } else {
+        result->prandtl = 0.7; /* 典型气体值 */
+    }
 }
 
 /* ============ 偏微分计算 ============ */
@@ -776,6 +886,9 @@ int nozzle_calc_from_pressure(const PropellantInput* input,
     
     result->exit_pressure = exit_pressure;
     
+    /* 压力比 (公式52) */
+    result->pressure_ratio = input->chamber_pressure / exit_pressure;
+    
     /* 计算出口速度 */
     double H_exit = 0.0;
     for (i = 0; i < N; i++) {
@@ -790,14 +903,104 @@ int nozzle_calc_from_pressure(const PropellantInput* input,
         result->exit_velocity = 0.0;
     }
     
-    /* 比冲 */
+    /* 比冲 - 大气 (公式80) */
     result->specific_impulse = result->exit_velocity / 9.80665;
     
-    /* 马赫数 */
+    /* 出口气相总摩尔数和密度 */
     double ng_exit = 0.0;
-    for (i = L; i < N; i++) ng_exit += result->mole_fractions[i];
-    double sound_exit = sqrt(chamber->gamma_s * ng_exit * R_UNIVERSAL * result->exit_temperature);
-    result->mach_number = result->exit_velocity / sound_exit;
+    double mass_exit = 0.0;
+    double M_i[MAX_SPECIES];
+    for (i = 0; i < N; i++) {
+        M_i[i] = 0.0;
+        for (int k = 0; k < input->num_elements; k++) {
+            M_i[i] += input->element_weight[k] * input->Aij[k][i];
+        }
+        mass_exit += result->mole_fractions[i] * M_i[i];
+        if (i >= L) {
+            ng_exit += result->mole_fractions[i];
+        }
+    }
+    
+    /* 出口密度 (公式24) */
+    result->exit_density = (exit_pressure * ATM_TO_PA) / (ng_exit * R_UNIVERSAL * result->exit_temperature);
+    
+    /* 出口声速 (公式34) */
+    result->exit_sound_speed = sqrt(chamber->gamma_s * ng_exit * R_UNIVERSAL * result->exit_temperature);
+    
+    /* 马赫数 */
+    result->mach_number = result->exit_velocity / result->exit_sound_speed;
+    
+    /* ============ 喉部参数计算 (公式76-78) ============ */
+    
+    /* 喉部温度 (公式76) - 等熵流动 */
+    result->throat_temperature = chamber->temperature * 2.0 / (chamber->gamma_s + 1.0);
+    
+    /* 喉部压力 (公式77) */
+    result->throat_pressure = input->chamber_pressure * 
+                              pow(2.0 / (chamber->gamma_s + 1.0), 
+                                  chamber->gamma_s / (chamber->gamma_s - 1.0));
+    
+    /* 喉部速度 = 声速 (马赫数为1) */
+    double ng_throat = 0.0;
+    for (i = L; i < N; i++) ng_throat += chamber->mole_fractions[i];
+    result->throat_velocity = sqrt(chamber->gamma_s * ng_throat * R_UNIVERSAL * result->throat_temperature);
+    
+    /* ============ 平均等熵指数 (公式68-69) ============ */
+    
+    /* 燃烧室-喷管平均温度的gamma */
+    double T_avg = (chamber->temperature + result->exit_temperature) / 2.0;
+    double T_ratio = chamber->temperature / result->exit_temperature;
+    
+    /* 基于温度比和压力比反推等效gamma (公式69) */
+    /* ln(T_c/T_e) = (gamma_m - 1)/gamma_m * ln(p_c/p_e) */
+    double lnT = log(T_ratio);
+    double lnP = log(result->pressure_ratio);
+    
+    if (fabs(lnP) > 1e-6 && fabs(lnT) > 1e-6) {
+        /* 反解 gamma_m */
+        double x = lnT / lnP;
+        if (x > 0 && x < 1) {
+            result->mean_gamma = 1.0 / (1.0 - x);
+        } else {
+            result->mean_gamma = (chamber->gamma_s + chamber->gamma) / 2.0;
+        }
+    } else {
+        result->mean_gamma = chamber->gamma_s;
+    }
+    
+    /* ============ 推力系数 (公式83-84) ============ */
+    
+    /* 质量流系数 Γ (公式48) */
+    double Gamma = sqrt(chamber->gamma_s) * 
+                   pow(2.0 / (chamber->gamma_s + 1.0), 
+                       (chamber->gamma_s + 1.0) / (2.0 * (chamber->gamma_s - 1.0)));
+    result->mass_flow_coefficient = Gamma;
+    
+    /* 推力系数 (公式84) */
+    /* C_F = Gamma * sqrt(2*gamma/(gamma-1) * [1 - (pe/pc)^((gamma-1)/gamma)]) 
+           + (pe - pa)/pc * (Ae/At) */
+    /* 假设真空条件 pa = 0，面积比由马赫数计算 */
+    double gamma = chamber->gamma_s;
+    double pe_pc = 1.0 / result->pressure_ratio;
+    double vel_term = sqrt(2.0 * gamma / (gamma - 1.0) * 
+                          (1.0 - pow(pe_pc, (gamma - 1.0) / gamma)));
+    
+    /* 面积比 (公式70) */
+    double area_ratio;
+    if (result->mach_number > 1.0) {
+        double M = result->mach_number;
+        area_ratio = (1.0 / M) * pow(2.0 / (gamma + 1.0) * 
+                    (1.0 + (gamma - 1.0) / 2.0 * M * M), 
+                    (gamma + 1.0) / (2.0 * (gamma - 1.0)));
+    } else {
+        area_ratio = 1.0;
+    }
+    
+    result->thrust_coefficient = Gamma * vel_term + pe_pc * area_ratio;
+    
+    /* 真空比冲 (公式81) */
+    /* Isp_vac = c* * CF / g0 */
+    result->specific_impulse_vac = chamber->char_velocity * result->thrust_coefficient / 9.80665;
     
     result->converged = 1;
     return 0;
@@ -823,6 +1026,9 @@ int nozzle_calc_from_temperature(const PropellantInput* input,
                             pow(exit_temperature / chamber->temperature,
                                 chamber->gamma_s / (chamber->gamma_s - 1.0));
     
+    /* 压力比 */
+    result->pressure_ratio = input->chamber_pressure / result->exit_pressure;
+    
     /* 计算出口速度 */
     double H_exit = 0.0;
     for (i = 0; i < N; i++) {
@@ -839,10 +1045,55 @@ int nozzle_calc_from_temperature(const PropellantInput* input,
     
     result->specific_impulse = result->exit_velocity / 9.80665;
     
+    /* 出口参数 */
     double ng = 0.0;
-    for (i = L; i < N; i++) ng += result->mole_fractions[i];
-    double sound = sqrt(chamber->gamma_s * ng * R_UNIVERSAL * exit_temperature);
-    result->mach_number = result->exit_velocity / sound;
+    double mass_exit = 0.0;
+    double M_i[MAX_SPECIES];
+    for (i = 0; i < N; i++) {
+        M_i[i] = 0.0;
+        for (int k = 0; k < input->num_elements; k++) {
+            M_i[i] += input->element_weight[k] * input->Aij[k][i];
+        }
+        mass_exit += result->mole_fractions[i] * M_i[i];
+        if (i >= L) {
+            ng += result->mole_fractions[i];
+        }
+    }
+    
+    /* 出口密度和声速 */
+    result->exit_density = (result->exit_pressure * ATM_TO_PA) / (ng * R_UNIVERSAL * exit_temperature);
+    result->exit_sound_speed = sqrt(chamber->gamma_s * ng * R_UNIVERSAL * exit_temperature);
+    result->mach_number = result->exit_velocity / result->exit_sound_speed;
+    
+    /* 喉部参数 (冻结流动) */
+    result->throat_temperature = chamber->temperature * 2.0 / (chamber->gamma_s + 1.0);
+    result->throat_pressure = input->chamber_pressure * 
+                              pow(2.0 / (chamber->gamma_s + 1.0), 
+                                  chamber->gamma_s / (chamber->gamma_s - 1.0));
+    result->throat_velocity = sqrt(chamber->gamma_s * ng * R_UNIVERSAL * result->throat_temperature);
+    
+    /* 平均等熵指数 */
+    result->mean_gamma = chamber->gamma_s;
+    
+    /* 推力系数和真空比冲 */
+    double gamma = chamber->gamma_s;
+    double Gamma = sqrt(gamma) * 
+                   pow(2.0 / (gamma + 1.0), 
+                       (gamma + 1.0) / (2.0 * (gamma - 1.0)));
+    result->mass_flow_coefficient = Gamma;
+    
+    double pe_pc = 1.0 / result->pressure_ratio;
+    double vel_term = sqrt(2.0 * gamma / (gamma - 1.0) * 
+                          (1.0 - pow(pe_pc, (gamma - 1.0) / gamma)));
+    
+    double M = result->mach_number;
+    double area_ratio = (M > 1.0) ? 
+                        (1.0 / M) * pow(2.0 / (gamma + 1.0) * 
+                        (1.0 + (gamma - 1.0) / 2.0 * M * M), 
+                        (gamma + 1.0) / (2.0 * (gamma - 1.0))) : 1.0;
+    
+    result->thrust_coefficient = Gamma * vel_term + pe_pc * area_ratio;
+    result->specific_impulse_vac = chamber->char_velocity * result->thrust_coefficient / 9.80665;
     
     result->converged = 1;
     return 0;
