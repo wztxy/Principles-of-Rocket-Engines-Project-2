@@ -99,7 +99,8 @@ void MainWindow::setupUI() {
     // 初始化组分表 - 支持多种推进剂类型
     // LOX/LH2: H, H2, H2O, O, O2, OH (6种)
     // LOX/CH4: H2O, H2, OH, H, CO2, CO, O2, O (8种)
-    QStringList speciesNames = {"H2O", "H2", "OH", "H", "CO2", "CO", "O2", "O"};
+    // 使用 Unicode 下标字符
+    QStringList speciesNames = {"H₂O", "H₂", "OH", "H", "CO₂", "CO", "O₂", "O"};
     ui->tableSpecies->setRowCount(speciesNames.size());
     for (int i = 0; i < speciesNames.size(); ++i) {
         ui->tableSpecies->setItem(i, 0, new QTableWidgetItem(speciesNames[i]));
@@ -364,7 +365,7 @@ void MainWindow::displayResults(const ThermoResult& result) {
     displayChamberResults(result.chamber);
     displayNozzleResults(result.nozzle);
 
-    // 更新组分表 - 根据推进剂类型显示不同组分名称
+    // 更新组分表 - 根据推进剂类型显示不同组分名称 (使用 Unicode 下标)
     QStringList speciesNames;
     if (m_currentConfig.num_elements == 3) {
         // LOX/CH4: H2O, H2, OH, H, CO2, CO, O2, O
@@ -394,46 +395,68 @@ void MainWindow::displayResults(const ThermoResult& result) {
 }
 
 void MainWindow::displayChamberResults(const ChamberResult& chamber) {
+    auto setTableValue = [this](int row, const QString& value) {
+        if (row < ui->tableChamber->rowCount()) {
+            QTableWidgetItem* item = ui->tableChamber->item(row, 1);
+            if (item) {
+                item->setText(value);
+            } else {
+                ui->tableChamber->setItem(row, 1, new QTableWidgetItem(value));
+            }
+        }
+    };
+    
     int row = 0;
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.temperature, 2));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.total_enthalpy / 1000.0, 2));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.total_entropy / 1000.0, 4));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.mean_molecular_weight, 3));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.density, 3));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.cp / 1000.0, 4));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.cv / 1000.0, 4));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.gamma, 4));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.gamma_s, 4));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.sound_speed, 1));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.char_velocity, 1));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.cp_frozen / 1000.0, 4));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.gamma_frozen, 4));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.sound_speed_frozen, 1));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.R_specific, 2));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.viscosity * 1e6, 4) + " ×10⁻⁶");
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.conductivity, 4));
-    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.prandtl, 4));
-    ui->tableChamber->item(row++, 1)->setText(chamber.converged ? "✓ 收敛" : "✗ 未收敛");
+    setTableValue(row++, formatNumber(chamber.temperature, 2));
+    setTableValue(row++, formatNumber(chamber.total_enthalpy / 1000.0, 2));
+    setTableValue(row++, formatNumber(chamber.total_entropy / 1000.0, 4));
+    setTableValue(row++, formatNumber(chamber.mean_molecular_weight, 3));
+    setTableValue(row++, formatNumber(chamber.density, 3));
+    setTableValue(row++, formatNumber(chamber.cp / 1000.0, 4));
+    setTableValue(row++, formatNumber(chamber.cv / 1000.0, 4));
+    setTableValue(row++, formatNumber(chamber.gamma, 4));
+    setTableValue(row++, formatNumber(chamber.gamma_s, 4));
+    setTableValue(row++, formatNumber(chamber.sound_speed, 1));
+    setTableValue(row++, formatNumber(chamber.char_velocity, 1));
+    setTableValue(row++, formatNumber(chamber.cp_frozen / 1000.0, 4));
+    setTableValue(row++, formatNumber(chamber.gamma_frozen, 4));
+    setTableValue(row++, formatNumber(chamber.sound_speed_frozen, 1));
+    setTableValue(row++, formatNumber(chamber.R_specific, 2));
+    setTableValue(row++, formatNumber(chamber.viscosity * 1e6, 4) + " ×10⁻⁶");
+    setTableValue(row++, formatNumber(chamber.conductivity, 4));
+    setTableValue(row++, formatNumber(chamber.prandtl, 4));
+    setTableValue(row++, chamber.converged ? "✓ 收敛" : "✗ 未收敛");
 }
 
 void MainWindow::displayNozzleResults(const NozzleResult& nozzle) {
+    auto setTableValue = [this](int row, const QString& value) {
+        if (row < ui->tableNozzle->rowCount()) {
+            QTableWidgetItem* item = ui->tableNozzle->item(row, 1);
+            if (item) {
+                item->setText(value);
+            } else {
+                ui->tableNozzle->setItem(row, 1, new QTableWidgetItem(value));
+            }
+        }
+    };
+    
     int row = 0;
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_temperature, 2));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_pressure, 4));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_velocity, 1));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.specific_impulse, 1));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.specific_impulse_vac, 1));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.mach_number, 2));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.thrust_coefficient, 4));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.mass_flow_coefficient, 4));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.mean_gamma, 4));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.pressure_ratio, 2));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_density, 4));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_sound_speed, 1));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.throat_temperature, 2));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.throat_pressure, 4));
-    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.throat_velocity, 1));
-    ui->tableNozzle->item(row++, 1)->setText(nozzle.converged ? "✓ 收敛" : "✗ 未收敛");
+    setTableValue(row++, formatNumber(nozzle.exit_temperature, 2));
+    setTableValue(row++, formatNumber(nozzle.exit_pressure, 4));
+    setTableValue(row++, formatNumber(nozzle.exit_velocity, 1));
+    setTableValue(row++, formatNumber(nozzle.specific_impulse, 1));
+    setTableValue(row++, formatNumber(nozzle.specific_impulse_vac, 1));
+    setTableValue(row++, formatNumber(nozzle.mach_number, 2));
+    setTableValue(row++, formatNumber(nozzle.thrust_coefficient, 4));
+    setTableValue(row++, formatNumber(nozzle.mass_flow_coefficient, 4));
+    setTableValue(row++, formatNumber(nozzle.mean_gamma, 4));
+    setTableValue(row++, formatNumber(nozzle.pressure_ratio, 2));
+    setTableValue(row++, formatNumber(nozzle.exit_density, 4));
+    setTableValue(row++, formatNumber(nozzle.exit_sound_speed, 1));
+    setTableValue(row++, formatNumber(nozzle.throat_temperature, 2));
+    setTableValue(row++, formatNumber(nozzle.throat_pressure, 4));
+    setTableValue(row++, formatNumber(nozzle.throat_velocity, 1));
+    setTableValue(row++, nozzle.converged ? "✓ 收敛" : "✗ 未收敛");
 }
 
 void MainWindow::onExportResults() {
