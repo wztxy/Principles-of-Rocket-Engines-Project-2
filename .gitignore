@@ -11,6 +11,9 @@
 SLS_ThermoCalc/build/
 SLS_ThermoCalc/bin/
 
+# 用户热力配置（运行时生成）
+SLS_ThermoCalc/config/thermo_config.json
+
 # Qt Creator 项目文件
 *.pro.user
 *.pro.user.*

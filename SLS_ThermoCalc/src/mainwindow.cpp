@@ -19,6 +19,12 @@ MainWindow::MainWindow(QWidget* parent)
     setupUI();
     setupConnections();
     setupEnginePresets();
+    
+    // 确保热力配置文件存在，首次运行时生成
+    ensureThermoConfigExists();
+    // 加载用户热力配置
+    loadThermoConfigFromJson();
+    
     setupThermoDataTab();
 
     setStatusMessage("就绪 - 选择发动机并设置参数后点击计算");
@@ -1311,6 +1317,9 @@ void MainWindow::onApplySpeciesChange() {
     setStatusMessage("热力数据已更新");
     ui->textLog->append(QString("[%1] 热力数据配置已应用")
                             .arg(QDateTime::currentDateTime().toString("hh:mm:ss")));
+    
+    // 自动保存到配置文件
+    saveThermoConfigToJson();
 }
 
 void MainWindow::onResetThermoData() {
@@ -1329,6 +1338,10 @@ void MainWindow::onResetThermoData() {
     }
     
     loadThermoDataToUI();
+    
+    // 保存重置后的配置
+    saveThermoConfigToJson();
+    
     setStatusMessage("热力数据已重置为默认值");
     ui->textLog->append(QString("[%1] 热力数据已重置")
                             .arg(QDateTime::currentDateTime().toString("hh:mm:ss")));
@@ -1339,4 +1352,213 @@ void MainWindow::onThermoDataCellChanged(int row, int col) {
     Q_UNUSED(col);
     // 当表格数据改变时自动标记为已修改
     setStatusMessage("热力数据已修改，点击'应用修改'保存");
+}
+
+/* ============ 用户热力数据配置文件 ============ */
+
+QString MainWindow::getThermoConfigPath() {
+    // 配置文件放在应用程序目录下的 config 文件夹
+    QString appDir = QCoreApplication::applicationDirPath();
+    
+#ifdef Q_OS_MAC
+    // macOS: SLS_ThermoCalc.app/Contents/MacOS -> SLS_ThermoCalc/config
+    QString configDir = appDir + "/../../../../config";
+#else
+    // Windows/Linux: 可执行文件同级 config 文件夹
+    QString configDir = appDir + "/config";
+#endif
+    
+    return QDir(configDir).absolutePath() + "/thermo_config.json";
+}
+
+void MainWindow::ensureThermoConfigExists() {
+    QString configPath = getThermoConfigPath();
+    QFileInfo fileInfo(configPath);
+    
+    // 确保目录存在
+    QDir dir;
+    dir.mkpath(fileInfo.absolutePath());
+    
+    // 如果配置文件不存在，创建默认配置
+    if (!fileInfo.exists()) {
+        ui->textLog->append(QString("[信息] 首次运行，正在生成热力数据配置文件..."));
+        
+        // 初始化默认配置 (RS-25 LOX/LH2)
+        const EnginePreset* defaultPreset = get_engine_preset(ENGINE_RS25);
+        if (defaultPreset) {
+            m_currentConfig = defaultPreset->config;
+        }
+        
+        // 保存到文件
+        if (saveThermoConfigToJson()) {
+            ui->textLog->append(QString("[信息] 配置文件已创建: %1").arg(configPath));
+        }
+    }
+}
+
+bool MainWindow::saveThermoConfigToJson() {
+    QString configPath = getThermoConfigPath();
+    QFile file(configPath);
+    
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        ui->textLog->append(QString("[错误] 无法保存配置文件: %1").arg(configPath));
+        return false;
+    }
+    
+    QJsonObject root;
+    root["version"] = 1;
+    root["application"] = "SLS_ThermoCalc";
+    root["description"] = "用户热力数据配置文件";
+    root["lastModified"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+    
+    // 基本参数
+    QJsonObject config;
+    config["num_propellants"] = m_currentConfig.num_propellants;
+    config["num_elements"] = m_currentConfig.num_elements;
+    config["num_species"] = m_currentConfig.num_species;
+    config["num_condensed"] = m_currentConfig.num_condensed;
+    
+    // 元素原子量
+    QJsonArray elementWeights;
+    for (int i = 0; i < m_currentConfig.num_elements; ++i) {
+        elementWeights.append(m_currentConfig.element_weight[i]);
+    }
+    config["element_weights"] = elementWeights;
+    
+    // 推进剂矩阵 St_aij
+    QJsonArray stMatrix;
+    for (int i = 0; i < m_currentConfig.num_propellants; ++i) {
+        QJsonArray row;
+        for (int j = 0; j < m_currentConfig.num_elements; ++j) {
+            row.append(m_currentConfig.St_aij[i][j]);
+        }
+        stMatrix.append(row);
+    }
+    config["St_aij"] = stMatrix;
+    
+    // 产物-元素矩阵 Aij
+    QJsonArray aijMatrix;
+    for (int i = 0; i < m_currentConfig.num_elements; ++i) {
+        QJsonArray row;
+        for (int j = 0; j < m_currentConfig.num_species; ++j) {
+            row.append(m_currentConfig.Aij[i][j]);
+        }
+        aijMatrix.append(row);
+    }
+    config["Aij"] = aijMatrix;
+    
+    // NASA 9 系数
+    QJsonArray speciesData;
+    QStringList speciesNames = getSpeciesNames();
+    for (int i = 0; i < m_currentConfig.num_species; ++i) {
+        QJsonObject species;
+        species["name"] = (i < speciesNames.size()) ? speciesNames[i] : QString("Species_%1").arg(i);
+        species["num_intervals"] = m_currentConfig.nasa9[i].num_intervals;
+        
+        QJsonArray intervals;
+        for (int k = 0; k < m_currentConfig.nasa9[i].num_intervals; ++k) {
+            QJsonObject interval;
+            interval["T_min"] = m_currentConfig.nasa9[i].intervals[k].T_min;
+            interval["T_max"] = m_currentConfig.nasa9[i].intervals[k].T_max;
+            
+            QJsonArray coeffs;
+            for (int c = 0; c < NASA9_COEFF_NUM; ++c) {
+                coeffs.append(m_currentConfig.nasa9[i].intervals[k].a[c]);
+            }
+            interval["coefficients"] = coeffs;
+            intervals.append(interval);
+        }
+        species["intervals"] = intervals;
+        speciesData.append(species);
+    }
+    config["species"] = speciesData;
+    
+    root["thermoConfig"] = config;
+    
+    // 写入文件
+    QJsonDocument doc(root);
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+    
+    ui->textLog->append(QString("[%1] 热力配置已保存")
+                            .arg(QDateTime::currentDateTime().toString("hh:mm:ss")));
+    return true;
+}
+
+bool MainWindow::loadThermoConfigFromJson() {
+    QString configPath = getThermoConfigPath();
+    QFile file(configPath);
+    
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return false;
+    }
+    
+    QByteArray data = file.readAll();
+    file.close();
+    
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        ui->textLog->append(QString("[错误] 配置文件解析失败: %1").arg(parseError.errorString()));
+        return false;
+    }
+    
+    QJsonObject root = doc.object();
+    if (!root.contains("thermoConfig")) {
+        return false;
+    }
+    
+    QJsonObject config = root["thermoConfig"].toObject();
+    
+    // 读取基本参数
+    m_currentConfig.num_propellants = config["num_propellants"].toInt(2);
+    m_currentConfig.num_elements = config["num_elements"].toInt(2);
+    m_currentConfig.num_species = config["num_species"].toInt(6);
+    m_currentConfig.num_condensed = config["num_condensed"].toInt(0);
+    
+    // 读取元素原子量
+    QJsonArray elementWeights = config["element_weights"].toArray();
+    for (int i = 0; i < elementWeights.size() && i < MAX_ELEMENTS; ++i) {
+        m_currentConfig.element_weight[i] = elementWeights[i].toDouble();
+    }
+    
+    // 读取推进剂矩阵
+    QJsonArray stMatrix = config["St_aij"].toArray();
+    for (int i = 0; i < stMatrix.size() && i < MAX_PROPELLANTS; ++i) {
+        QJsonArray row = stMatrix[i].toArray();
+        for (int j = 0; j < row.size() && j < MAX_ELEMENTS; ++j) {
+            m_currentConfig.St_aij[i][j] = row[j].toDouble();
+        }
+    }
+    
+    // 读取产物-元素矩阵
+    QJsonArray aijMatrix = config["Aij"].toArray();
+    for (int i = 0; i < aijMatrix.size() && i < MAX_ELEMENTS; ++i) {
+        QJsonArray row = aijMatrix[i].toArray();
+        for (int j = 0; j < row.size() && j < MAX_SPECIES; ++j) {
+            m_currentConfig.Aij[i][j] = row[j].toDouble();
+        }
+    }
+    
+    // 读取 NASA 9 系数
+    QJsonArray speciesData = config["species"].toArray();
+    for (int i = 0; i < speciesData.size() && i < MAX_SPECIES; ++i) {
+        QJsonObject species = speciesData[i].toObject();
+        m_currentConfig.nasa9[i].num_intervals = species["num_intervals"].toInt(2);
+        
+        QJsonArray intervals = species["intervals"].toArray();
+        for (int k = 0; k < intervals.size() && k < NASA9_TEMP_RANGES; ++k) {
+            QJsonObject interval = intervals[k].toObject();
+            m_currentConfig.nasa9[i].intervals[k].T_min = interval["T_min"].toDouble();
+            m_currentConfig.nasa9[i].intervals[k].T_max = interval["T_max"].toDouble();
+            
+            QJsonArray coeffs = interval["coefficients"].toArray();
+            for (int c = 0; c < coeffs.size() && c < NASA9_COEFF_NUM; ++c) {
+                m_currentConfig.nasa9[i].intervals[k].a[c] = coeffs[c].toDouble();
+            }
+        }
+    }
+    
+    ui->textLog->append(QString("[信息] 已加载热力配置文件"));
+    return true;
 }

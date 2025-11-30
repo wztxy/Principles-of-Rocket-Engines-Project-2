@@ -116,6 +116,12 @@ private:
     void saveSpeciesDataFromUI(int speciesIndex);
     QStringList getSpeciesNames();
     
+    // 用户热力数据配置文件
+    QString getThermoConfigPath();
+    void ensureThermoConfigExists();
+    bool saveThermoConfigToJson();
+    bool loadThermoConfigFromJson();
+    
     // 辅助函数
     QString formatNumber(double value, int precision = 4);
     void setStatusMessage(const QString& msg, bool isError = false);
