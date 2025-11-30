@@ -62,6 +62,12 @@ private slots:
     
     // 导出预设
     void onExportPreset();
+    
+    // 热力数据编辑
+    void onSpeciesSelectionChanged(int index);
+    void onApplySpeciesChange();
+    void onResetThermoData();
+    void onThermoDataCellChanged(int row, int col);
 
 private:
     Ui::MainWindow *ui;
@@ -102,6 +108,13 @@ private:
     // JSON 导入/导出
     bool savePresetToJson(const QString& filename);
     bool loadPresetFromJson(const QString& filename);
+    
+    // 热力数据显示和编辑
+    void setupThermoDataTab();
+    void loadThermoDataToUI();
+    void loadSpeciesDataToUI(int speciesIndex);
+    void saveSpeciesDataFromUI(int speciesIndex);
+    QStringList getSpeciesNames();
     
     // 辅助函数
     QString formatNumber(double value, int precision = 4);

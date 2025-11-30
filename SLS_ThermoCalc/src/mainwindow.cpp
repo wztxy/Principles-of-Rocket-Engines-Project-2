@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget* parent)
     setupUI();
     setupConnections();
     setupEnginePresets();
+    setupThermoDataTab();
 
     setStatusMessage("就绪 - 选择发动机并设置参数后点击计算");
 }
@@ -133,6 +134,12 @@ void MainWindow::setupConnections() {
     connect(ui->actionExit, &QAction::triggered, this, &QMainWindow::close);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onAbout);
     connect(ui->actionAboutQt, &QAction::triggered, this, &MainWindow::onAboutQt);
+    
+    // 热力数据编辑
+    connect(ui->comboSpeciesSelect, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &MainWindow::onSpeciesSelectionChanged);
+    connect(ui->btnApplySpecies, &QPushButton::clicked, this, &MainWindow::onApplySpeciesChange);
+    connect(ui->btnResetThermoData, &QPushButton::clicked, this, &MainWindow::onResetThermoData);
 }
 
 void MainWindow::setupEnginePresets() {
@@ -1049,5 +1056,287 @@ bool MainWindow::loadPresetFromJson(const QString& filename) {
     // 更新质量分数
     onMixtureRatioChanged(ui->spinMixtureRatio->value());
     
+    // 更新热力数据显示
+    loadThermoDataToUI();
+    
     return true;
+}
+
+/* ============ 热力数据 Tab 功能实现 ============ */
+
+QStringList MainWindow::getSpeciesNames() {
+    QStringList names;
+    if (m_currentConfig.num_elements == 3) {
+        // LOX/CH4: H2O, H2, OH, H, CO2, CO, O2, O
+        names = {"H₂O", "H₂", "OH", "H", "CO₂", "CO", "O₂", "O"};
+    } else {
+        // LOX/LH2: H, H2, H2O, O, O2, OH
+        names = {"H", "H₂", "H₂O", "O", "O₂", "OH"};
+    }
+    return names;
+}
+
+void MainWindow::setupThermoDataTab() {
+    // 初始化 NASA 9 系数表
+    ui->tableNasa9->setRowCount(1);
+    ui->tableNasa9->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableNasa9->verticalHeader()->setVisible(false);
+    
+    // 初始化推进剂矩阵表
+    ui->tablePropMatrix->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tablePropMatrix->verticalHeader()->setDefaultSectionSize(28);
+    
+    // 初始化迭代初值表
+    ui->tableInitialGuess->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableInitialGuess->verticalHeader()->setVisible(false);
+    
+    // 设置元素原子量范围
+    ui->spinElemH->setRange(0.5, 10.0);
+    ui->spinElemO->setRange(10.0, 20.0);
+    ui->spinElemC->setRange(10.0, 15.0);
+    
+    // 确保 m_currentConfig 已初始化
+    if (m_currentConfig.num_species == 0) {
+        const EnginePreset* defaultPreset = get_engine_preset(ENGINE_RS25);
+        if (defaultPreset) {
+            m_currentConfig = defaultPreset->config;
+        }
+    }
+    
+    // 加载热力数据到 UI
+    loadThermoDataToUI();
+}
+
+void MainWindow::loadThermoDataToUI() {
+    // 阻止信号触发
+    ui->comboSpeciesSelect->blockSignals(true);
+    ui->spinNumSpecies->blockSignals(true);
+    ui->spinNumElements->blockSignals(true);
+    
+    // 更新基本参数
+    ui->spinNumSpecies->setValue(m_currentConfig.num_species);
+    ui->spinNumElements->setValue(m_currentConfig.num_elements);
+    
+    // 更新组分选择下拉框
+    ui->comboSpeciesSelect->clear();
+    QStringList speciesNames = getSpeciesNames();
+    for (int i = 0; i < m_currentConfig.num_species && i < speciesNames.size(); ++i) {
+        ui->comboSpeciesSelect->addItem(QString("%1 - %2").arg(i).arg(speciesNames[i]));
+    }
+    
+    // 更新元素标签
+    if (m_currentConfig.num_elements == 3) {
+        ui->lblAtom1->setText("H:");
+        ui->lblAtom2->setText("O:");
+        ui->lblAtom3->setText("C:");
+        ui->lblAtom3->setVisible(true);
+        ui->spinAtom3->setVisible(true);
+        ui->lblElemC->setVisible(true);
+        ui->spinElemC->setVisible(true);
+    } else {
+        ui->lblAtom1->setText("H:");
+        ui->lblAtom2->setText("O:");
+        ui->lblAtom3->setVisible(false);
+        ui->spinAtom3->setVisible(false);
+        ui->lblElemC->setVisible(false);
+        ui->spinElemC->setVisible(false);
+    }
+    
+    // 更新元素原子量
+    if (m_currentConfig.num_elements >= 1)
+        ui->spinElemH->setValue(m_currentConfig.element_weight[0]);
+    if (m_currentConfig.num_elements >= 2)
+        ui->spinElemO->setValue(m_currentConfig.element_weight[1]);
+    if (m_currentConfig.num_elements >= 3)
+        ui->spinElemC->setValue(m_currentConfig.element_weight[2]);
+    
+    // 更新推进剂矩阵表
+    int numProps = m_currentConfig.num_propellants;
+    int numElems = m_currentConfig.num_elements;
+    ui->tablePropMatrix->setRowCount(numProps);
+    ui->tablePropMatrix->setColumnCount(numElems);
+    
+    QStringList elemHeaders;
+    if (numElems >= 1) elemHeaders << "H";
+    if (numElems >= 2) elemHeaders << "O";
+    if (numElems >= 3) elemHeaders << "C";
+    ui->tablePropMatrix->setHorizontalHeaderLabels(elemHeaders);
+    
+    QStringList propHeaders;
+    if (m_currentConfig.num_elements == 3) {
+        propHeaders << "CH₄ (燃料)" << "O₂ (氧化剂)";
+    } else {
+        propHeaders << "H₂ (燃料)" << "O₂ (氧化剂)";
+    }
+    ui->tablePropMatrix->setVerticalHeaderLabels(propHeaders);
+    
+    for (int i = 0; i < numProps; ++i) {
+        for (int j = 0; j < numElems; ++j) {
+            QTableWidgetItem* item = new QTableWidgetItem(
+                QString::number(m_currentConfig.St_aij[i][j], 'f', 0));
+            ui->tablePropMatrix->setItem(i, j, item);
+        }
+    }
+    
+    // 更新迭代初值表
+    int numSpecies = m_currentConfig.num_species;
+    ui->tableInitialGuess->setColumnCount(numSpecies);
+    ui->tableInitialGuess->setRowCount(1);
+    
+    QStringList initHeaders;
+    for (int i = 0; i < numSpecies && i < speciesNames.size(); ++i) {
+        initHeaders << speciesNames[i];
+    }
+    ui->tableInitialGuess->setHorizontalHeaderLabels(initHeaders);
+    
+    // 这里需要从预设中获取初始值（目前使用默认值）
+    double c_init[MAX_SPECIES] = {0};
+    get_initial_guess(ENGINE_RS25, c_init, numSpecies);
+    
+    for (int i = 0; i < numSpecies; ++i) {
+        QTableWidgetItem* item = new QTableWidgetItem(
+            QString::number(c_init[i], 'e', 2));
+        ui->tableInitialGuess->setItem(0, i, item);
+    }
+    
+    // 加载第一个组分的数据
+    if (m_currentConfig.num_species > 0) {
+        loadSpeciesDataToUI(0);
+    }
+    
+    // 恢复信号
+    ui->comboSpeciesSelect->blockSignals(false);
+    ui->spinNumSpecies->blockSignals(false);
+    ui->spinNumElements->blockSignals(false);
+}
+
+void MainWindow::loadSpeciesDataToUI(int speciesIndex) {
+    if (speciesIndex < 0 || speciesIndex >= m_currentConfig.num_species)
+        return;
+    
+    QStringList speciesNames = getSpeciesNames();
+    QString name = (speciesIndex < speciesNames.size()) ? 
+                   speciesNames[speciesIndex] : QString("Species %1").arg(speciesIndex);
+    
+    // 移除 Unicode 下标用于显示
+    QString plainName = name;
+    plainName.replace("₂", "2");
+    ui->editSpeciesName->setText(plainName);
+    
+    // 从 NASA 9 系数计算分子量（简化：使用原子组成计算）
+    double molWeight = 0.0;
+    for (int k = 0; k < m_currentConfig.num_elements; ++k) {
+        molWeight += m_currentConfig.Aij[k][speciesIndex] * m_currentConfig.element_weight[k];
+    }
+    ui->spinMolWeight->setValue(molWeight);
+    
+    // 设置原子组成
+    if (m_currentConfig.num_elements >= 1)
+        ui->spinAtom1->setValue(static_cast<int>(m_currentConfig.Aij[0][speciesIndex]));
+    if (m_currentConfig.num_elements >= 2)
+        ui->spinAtom2->setValue(static_cast<int>(m_currentConfig.Aij[1][speciesIndex]));
+    if (m_currentConfig.num_elements >= 3)
+        ui->spinAtom3->setValue(static_cast<int>(m_currentConfig.Aij[2][speciesIndex]));
+    
+    // 加载 NASA 9 系数（高温区 1000-6000K）
+    const NASA9Coefficients* coeff = &m_currentConfig.nasa9[speciesIndex];
+    int highTempInterval = (coeff->num_intervals > 1) ? 1 : 0;
+    
+    ui->tableNasa9->setRowCount(1);
+    for (int i = 0; i < NASA9_COEFF_NUM; ++i) {
+        double val = coeff->intervals[highTempInterval].a[i];
+        QTableWidgetItem* item = new QTableWidgetItem(QString::number(val, 'e', 6));
+        ui->tableNasa9->setItem(0, i, item);
+    }
+    
+    // 计算 Hf(298K) 并显示
+    // 注意：这是一个近似值，实际需要从数据库获取
+    ui->spinHf298->setValue(0.0);  // 默认值
+}
+
+void MainWindow::saveSpeciesDataFromUI(int speciesIndex) {
+    if (speciesIndex < 0 || speciesIndex >= m_currentConfig.num_species)
+        return;
+    
+    // 保存原子组成到 Aij 矩阵
+    if (m_currentConfig.num_elements >= 1)
+        m_currentConfig.Aij[0][speciesIndex] = ui->spinAtom1->value();
+    if (m_currentConfig.num_elements >= 2)
+        m_currentConfig.Aij[1][speciesIndex] = ui->spinAtom2->value();
+    if (m_currentConfig.num_elements >= 3)
+        m_currentConfig.Aij[2][speciesIndex] = ui->spinAtom3->value();
+    
+    // 保存 NASA 9 系数
+    NASA9Coefficients* coeff = &m_currentConfig.nasa9[speciesIndex];
+    int highTempInterval = (coeff->num_intervals > 1) ? 1 : 0;
+    
+    for (int i = 0; i < NASA9_COEFF_NUM; ++i) {
+        QTableWidgetItem* item = ui->tableNasa9->item(0, i);
+        if (item) {
+            coeff->intervals[highTempInterval].a[i] = item->text().toDouble();
+        }
+    }
+    
+    ui->textLog->append(QString("[%1] 已更新组分 %2 的热力数据")
+                            .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
+                            .arg(speciesIndex));
+}
+
+void MainWindow::onSpeciesSelectionChanged(int index) {
+    loadSpeciesDataToUI(index);
+}
+
+void MainWindow::onApplySpeciesChange() {
+    int currentIndex = ui->comboSpeciesSelect->currentIndex();
+    saveSpeciesDataFromUI(currentIndex);
+    
+    // 同时保存元素原子量
+    if (m_currentConfig.num_elements >= 1)
+        m_currentConfig.element_weight[0] = ui->spinElemH->value();
+    if (m_currentConfig.num_elements >= 2)
+        m_currentConfig.element_weight[1] = ui->spinElemO->value();
+    if (m_currentConfig.num_elements >= 3)
+        m_currentConfig.element_weight[2] = ui->spinElemC->value();
+    
+    // 保存推进剂矩阵
+    for (int i = 0; i < m_currentConfig.num_propellants; ++i) {
+        for (int j = 0; j < m_currentConfig.num_elements; ++j) {
+            QTableWidgetItem* item = ui->tablePropMatrix->item(i, j);
+            if (item) {
+                m_currentConfig.St_aij[i][j] = item->text().toDouble();
+            }
+        }
+    }
+    
+    setStatusMessage("热力数据已更新");
+    ui->textLog->append(QString("[%1] 热力数据配置已应用")
+                            .arg(QDateTime::currentDateTime().toString("hh:mm:ss")));
+}
+
+void MainWindow::onResetThermoData() {
+    // 获取当前选择的发动机类型
+    int presetIndex = ui->comboEngine->currentData().toInt();
+    
+    if (presetIndex >= 0 && presetIndex < m_presets.size()) {
+        // 从预设文件重新加载
+        loadPresetFromJson(m_presets[presetIndex].filePath);
+    } else {
+        // 使用默认 RS-25 配置
+        const EnginePreset* defaultPreset = get_engine_preset(ENGINE_RS25);
+        if (defaultPreset) {
+            m_currentConfig = defaultPreset->config;
+        }
+    }
+    
+    loadThermoDataToUI();
+    setStatusMessage("热力数据已重置为默认值");
+    ui->textLog->append(QString("[%1] 热力数据已重置")
+                            .arg(QDateTime::currentDateTime().toString("hh:mm:ss")));
+}
+
+void MainWindow::onThermoDataCellChanged(int row, int col) {
+    Q_UNUSED(row);
+    Q_UNUSED(col);
+    // 当表格数据改变时自动标记为已修改
+    setStatusMessage("热力数据已修改，点击'应用修改'保存");
 }

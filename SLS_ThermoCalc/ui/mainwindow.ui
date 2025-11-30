@@ -115,6 +115,16 @@ QTableWidget::item {
 QTableWidget::item:selected {
     background-color: #1e3a5f;
 }
+QTableWidget QLineEdit {
+    background-color: #152535;
+    border: 1px solid #00b4d8;
+    border-radius: 0px;
+    padding: 2px 4px;
+    margin: 0px;
+    color: #ffffff;
+    font-size: 12px;
+    selection-background-color: #00b4d8;
+}
 QHeaderView::section {
     background-color: #0d1520;
     color: #00b4d8;
@@ -653,6 +663,421 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
           <property name="readOnly">
            <bool>true</bool>
           </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <!-- 热力数据 -->
+      <widget class="QWidget" name="tabThermoData">
+       <attribute name="title">
+        <string>热力数据</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="thermoDataLayout">
+        <property name="spacing">
+         <number>8</number>
+        </property>
+        <!-- 组分选择和基本信息 -->
+        <item>
+         <widget class="QGroupBox" name="groupSpeciesInfo">
+          <property name="title">
+           <string>平衡组分配置</string>
+          </property>
+          <property name="maximumHeight">
+           <number>180</number>
+          </property>
+          <layout class="QGridLayout" name="speciesInfoLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="lblSpeciesSelect">
+             <property name="text">
+              <string>选择组分:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="comboSpeciesSelect">
+             <property name="minimumWidth">
+              <number>150</number>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="lblNumSpecies">
+             <property name="text">
+              <string>组分数 N:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QSpinBox" name="spinNumSpecies">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>20</number>
+             </property>
+             <property name="value">
+              <number>6</number>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QLabel" name="lblNumElements">
+             <property name="text">
+              <string>元素数 M:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <widget class="QSpinBox" name="spinNumElements">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>2</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="lblSpeciesName">
+             <property name="text">
+              <string>组分名称:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="editSpeciesName">
+             <property name="placeholderText">
+              <string>如 H2O</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="lblMolWeight">
+             <property name="text">
+              <string>分子量 (g/mol):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QDoubleSpinBox" name="spinMolWeight">
+             <property name="decimals">
+              <number>4</number>
+             </property>
+             <property name="minimum">
+              <double>1.000000</double>
+             </property>
+             <property name="maximum">
+              <double>500.000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="lblHf298">
+             <property name="text">
+              <string>Hf(298K) (kJ/mol):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QDoubleSpinBox" name="spinHf298">
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="minimum">
+              <double>-1000.000000</double>
+             </property>
+             <property name="maximum">
+              <double>1000.000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="6">
+            <widget class="QLabel" name="lblAtomComposition">
+             <property name="text">
+              <string>原子组成 (Aij矩阵行 - 该组分含各元素摩尔数):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0" colspan="6">
+            <layout class="QHBoxLayout" name="atomLayout">
+             <item>
+              <widget class="QLabel" name="lblAtom1">
+               <property name="text">
+                <string>H:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spinAtom1">
+               <property name="maximum">
+                <number>20</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lblAtom2">
+               <property name="text">
+                <string>O:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spinAtom2">
+               <property name="maximum">
+                <number>20</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lblAtom3">
+               <property name="text">
+                <string>C:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spinAtom3">
+               <property name="maximum">
+                <number>20</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="atomSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnApplySpecies">
+               <property name="text">
+                <string>应用修改</string>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>80</width>
+                 <height>36</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <!-- NASA 9系数表 -->
+        <item>
+         <widget class="QGroupBox" name="groupNasa9">
+          <property name="title">
+           <string>NASA 9 系数 (高温区 1000-6000K)</string>
+          </property>
+          <layout class="QVBoxLayout" name="nasa9Layout">
+           <item>
+            <widget class="QTableWidget" name="tableNasa9">
+             <property name="columnCount">
+              <number>9</number>
+             </property>
+             <property name="rowCount">
+              <number>1</number>
+             </property>
+             <property name="maximumHeight">
+              <number>90</number>
+             </property>
+             <column>
+              <property name="text">
+               <string>a1 (T⁻²)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>a2 (T⁻¹)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>a3</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>a4 (T)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>a5 (T²)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>a6 (T³)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>a7 (T⁴)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>b1 (H积分)</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>b2 (S积分)</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <!-- 推进剂矩阵 -->
+        <item>
+         <widget class="QGroupBox" name="groupPropMatrix">
+          <property name="title">
+           <string>推进剂组元矩阵 (St_aij - 1mol组元含各元素摩尔数)</string>
+          </property>
+          <layout class="QVBoxLayout" name="propMatrixLayout">
+           <item>
+            <widget class="QTableWidget" name="tablePropMatrix">
+             <property name="columnCount">
+              <number>3</number>
+             </property>
+             <property name="rowCount">
+              <number>2</number>
+             </property>
+             <property name="maximumHeight">
+              <number>100</number>
+             </property>
+             <column>
+              <property name="text">
+               <string>H</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>O</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>C</string>
+              </property>
+             </column>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <!-- 迭代初值 -->
+        <item>
+         <widget class="QGroupBox" name="groupInitialGuess">
+          <property name="title">
+           <string>组分迭代初值 (c_init)</string>
+          </property>
+          <layout class="QVBoxLayout" name="initGuessLayout">
+           <item>
+            <widget class="QTableWidget" name="tableInitialGuess">
+             <property name="columnCount">
+              <number>8</number>
+             </property>
+             <property name="rowCount">
+              <number>1</number>
+             </property>
+             <property name="maximumHeight">
+              <number>70</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <!-- 元素原子量 -->
+        <item>
+         <widget class="QGroupBox" name="groupElementWeights">
+          <property name="title">
+           <string>元素原子量 M_k (g/mol)</string>
+          </property>
+          <layout class="QHBoxLayout" name="elemWeightLayout">
+           <item>
+            <widget class="QLabel" name="lblElemH">
+             <property name="text">
+              <string>H:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="spinElemH">
+             <property name="decimals">
+              <number>5</number>
+             </property>
+             <property name="value">
+              <double>1.00794</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="lblElemO">
+             <property name="text">
+              <string>O:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="spinElemO">
+             <property name="decimals">
+              <number>5</number>
+             </property>
+             <property name="value">
+              <double>15.99940</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="lblElemC">
+             <property name="text">
+              <string>C:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="spinElemC">
+             <property name="decimals">
+              <number>5</number>
+             </property>
+             <property name="value">
+              <double>12.01070</double>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="elemSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnResetThermoData">
+             <property name="text">
+              <string>重置为默认值</string>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>100</width>
+               <height>28</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
