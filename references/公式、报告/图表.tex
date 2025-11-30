@@ -1,0 +1,322 @@
+\documentclass[zihao=-4]{ctexart}
+\usepackage[normalem]{ulem}
+\useunder{\uline}{\ul}{}
+%********************导言区宏包引入********************
+\usepackage{xeCJK}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{listings} %代码
+\usepackage{graphicx}
+\usepackage{multicol} %回车换段
+\usepackage{xcolor}
+\usepackage{geometry} %页面设置
+\usepackage{fontspec}
+\usepackage{setspace}
+\usepackage{times}
+\usepackage{fancyhdr} %页眉页脚
+\pagestyle{fancy}
+\usepackage{siunitx} % 推荐用于单位和数字格式化
+\sisetup{detect-all=true, per-mode=symbol, group-separator={\,}, group-minimum-digits=4}
+\usepackage{float} %表格位置
+\usepackage{titlesec} %设置
+\usepackage{titletoc}
+\usepackage{ctex}
+\usepackage{gbt7714}    %控制参考文献格式为国标
+\usepackage{multirow}
+\usepackage{booktabs}   %表格相关
+\usepackage{setspace}   %设置行距
+\usepackage{caption} %caption
+\usepackage{subcaption} %子图的caption
+\usepackage{changepage} %左右缩进
+\usepackage{xcolor}
+\usepackage{xurl}                 % 允许 URL 在任意合适位置断行
+\usepackage[hidelinks]{hyperref}  % 若已加载 hyperref，请只确保 xurl 在它之前加载
+\usepackage{tabularx} % 新增：自适应表格列宽
+
+
+\newcolumntype{Y}{>{\centering\arraybackslash}X} % 居中可伸缩列
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{black},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    captionpos=b,
+    frame = shadowbox,
+    rulesepcolor=\color{red!20!green!20!blue!20},
+    framexleftmargin=2em
+}
+
+\graphicspath{ {include_picture/} }
+\let\algorithm\relax
+\let\endalgorithm\relax
+\usepackage[ruled,vlined]{algorithm2e}%[ruled,vlined]{
+\usepackage{algpseudocode}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}} 
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+%\renewcommand\thepage{\zihao{-5} ~\arabic{page}~}%页码字号
+
+%定义两个arg
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareCaptionLabelSeparator{mysep}{\space\space}  %自定义caption格式
+\captionsetup[figure]{font={small}, labelfont=bf, labelsep=mysep, textfont=bf}   %图片caption格式
+\captionsetup[table]{font={small}, labelfont=bf, labelsep=mysep, textfont={bf}}   %表格caption格式
+\bibliographystyle{gbt7714-numerical} %修改了title斜体内容
+
+%********************导言区宏包引入********************
+%********************第三方字体引入********************
+%\setCJKmainfont[Path=fonts/,BoldFont=simhei.ttf,ItalicFont=simkai.ttf,SlantedFont=simfang.ttf]{simsun.ttc}
+%中文字体涵盖黑体、宋体、楷体、仿宋
+\setmainfont[Path=fonts/, 
+BoldFont = times-new-roman-bold.ttf,
+ItalicFont = times-new-roman-italic.ttf,
+BoldItalicFont = times-new-roman-bold-italic.ttf
+]{times-new-roman.ttf}
+\setmonofont[Path=fonts/]{Courier New.ttf}
+\setCJKfamilyfont{hwzs}[Path=fonts/]{STKzhongsong.ttf}%使用STZhogsong华文中宋字体
+\newcommand{\zhongsong}{\CJKfamily{hwzs}}
+\setCJKfamilyfont{hwxw}[Path=fonts/]{STKxinwei.ttf} % XSP 2023/3/3:
+\newcommand{\xinwei}{\CJKfamily{hwxw}}              %  使用STZxinwei华文新魏字体.
+
+%********************第三方字体引入********************
+
+
+%********************中文字号设置********************
+%\newcommand{\chuhao}{\fontsize{42pt}{\baselineskip}\selectfont}
+\newcommand{\chuhao}{\fontsize{42pt}{0}}
+\newcommand{\xiaochu}{\fontsize{36pt}{0}}
+\newcommand{\yihao}{\fontsize{28pt}{0}}
+\newcommand{\erhao}{\fontsize{21pt}{0}}
+\newcommand{\xiaoer}{\fontsize{18pt}{0}}
+\newcommand{\sanhao}{\fontsize{16pt}{0}}
+\newcommand{\sihao}{\fontsize{14pt}{0}}
+\newcommand{\xiaosi}{\fontsize{12pt}{0}}
+\newcommand{\wuhao}{\fontsize{10.5pt}{0}}
+\newcommand{\xiaowu}{\fontsize{9pt}{0}}
+\newcommand{\liuhao}{\fontsize{8pt}{0}}
+\newcommand{\qihao}{\fontsize{5.25pt}{0}}
+%********************中文字号设置********************
+
+
+%********************页边距设置********************
+\geometry{left=3cm,right=2cm,top=2.5cm,bottom=2.5cm}
+\geometry{a4paper} % xsp 2023/3/7: 调整纸张大小为A4
+%********************页边距设置********************
+
+%********************段间距设置********************
+\newcommand{\setParDis}{\setlength {\parskip} {0pt} }
+%请在每部分使用这个
+%********************段间距设置********************
+
+%********************
+
+\begin{document}
+%********************页眉页脚设置********************
+\lhead{}%设置左页眉为空
+\rhead{}%设置左页眉为空
+\setlength{\headwidth}{\textwidth}% 2023/3/3 XSP: 页眉长度适应文本
+%********************页眉页脚设置********************
+
+
+%********************标题格式设置********************
+
+%\setcounter{secnumdepth}{0}%该命令取消了章标题前数字label
+
+\CTEXsetup[name={,、},number={\chinese{section}}]{section}
+\CTEXsetup[name={（,）},number={\chinese{subsection}}]{subsection}
+\CTEXsetup[name={,.},number={\arabic{subsubsection}}]{subsubsection}% 不加会导致目录格式错误
+% 设置subsubsection等格式
+% \titleformat{\section}[block]{\sanhao\bfseries\centering}{\chinese{section}、}{0pt}{}[]
+% \titleformat{\subsection}[block]{\sihao\bfseries}{（\chinese{subsection}）}{0pt}{}[]
+% \titleformat{\subsubsection}[block]{\xiaosi\bfseries}{\arabic{subsubsection}、}{0pt}{}[]
+\titleformat{\section}[block]{\sanhao\heiti\centering}{\chinese{section}、}{0pt}{}[]    % XSP 2023/3/3:
+\titleformat{\subsection}[block]{\sihao\heiti}{（\chinese{subsection}）}{0pt}{}[]       %   将正文标题字体由加粗
+\titleformat{\subsubsection}[block]{\xiaosi\heiti}{\arabic{subsubsection}.}{0pt}{}[]   % 修改为黑体。
+\titlespacing{\section}{0pt}{25pt}{12pt}
+\titlespacing{\subsection}{0pt}{7pt}{7pt}
+\titlespacing{\subsubsection}{0pt}{5pt}{4pt}
+
+\titlecontents{section}[1.6em]{\addvspace{2pt}\filright}
+{\contentspush{\thecontentslabel\hspace{0.8em}}}
+{}{\titlerule*[8pt]{.}\contentspage}
+
+\titlecontents{subsection}[3.2em]{\addvspace{2pt}\filright}
+{\contentspush{\thecontentslabel\hspace{0.8em}}}
+{}{\titlerule*[8pt]{.}\contentspage}
+
+\titlecontents{subsubsection}[6.4em]{\addvspace{2pt}\filright}
+{\contentspush{\thecontentslabel\hspace{0.8em}}}
+{}{\titlerule*[8pt]{.}\contentspage}
+%********************标题格式设置********************
+
+%\setcounter{section}{-3}  %标题计数器
+%\stepcounter{section}
+
+%*******************行间距段前段后*******************
+\linespread{1.8}
+%行间距为实际行间距乘以1.2,如此处实际为1.5倍行距
+\setlength{\parskip}{0.5\baselineskip}
+
+
+%表1
+\begin{table}[H]
+\small
+\caption{RS-25 与 SRB 计算参数}
+\centering
+\begin{tabular}{lcc}
+\hline
+\textbf{参数} & \textbf{RS-25} & \textbf{SRB} \\
+\hline
+\multicolumn{3}{c}{\textbf{海平面性能参数}} \\
+推力 (kN)            & 1635.51   & 13616.38  \\
+比冲 (m/s)           & 2816.88   & 2270.04   \\
+喷气速度 (m/s)       & 3432.58   & 2259.82   \\
+质量流量 (kg/s)      & 580.61    & 5998.29   \\
+- 氧化剂流量 (kg/s)  & 497.67    & ——      \\
+- 燃料流量 (kg/s)    & 82.94     & ——      \\
+特征速度 $c^*$ (m/s) & 1906.61   & 1454.32   \\
+推力系数 CF          & 1.477     & 1.561     \\
+\multicolumn{3}{c}{\textbf{真空性能参数}} \\
+推力 (kN)            & 2057.93   & 14716.97  \\
+比冲 (m/s)           & 3544.33   & 2453.53   \\
+喷气速度 (m/s)       & 3432.58   & 2259.82   \\
+推力系数 CF          & 1.859     & 1.687     \\
+\multicolumn{3}{c}{\textbf{效率分析}} \\
+燃烧室效率 (\%)      & 99.50     & 96.00     \\
+喷管效率 (\%)        & 98.00     & 95.00     \\
+总体效率 (\%)        & 97.51     & 91.20     \\
+\hline
+\end{tabular}
+\end{table}
+
+%表2
+\begin{table}[H]
+\small
+\caption{RS-25 与国际/中国发动机推力指标对比}
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tabular}{ccccccc}
+\hline  
+\textbf{发动机型号} & \textbf{推进剂} & \textbf{推力系数（典型值）} & \textbf{海平面推力} & \textbf{真空推力} & \textbf{海平面比冲} & \textbf{典型循环方式}  \\ 
+\hline  
+RS-25 & $LOX + LH_2$ & $1.477$ & $1636 kN$ & $2058 kN$  & $287s$ &预燃循环 \\
+YF-100（中国） & $LOX + RP-1$ & $1.50 \sim 1.60$ & $1200 kN$  & $1200 kN$  & $300s$ &富氧补燃 \\
+YF-77（中国） & $LOX + LH_2$ & $1.60 \sim 1.70$ & $700 kN$  & $750 kN$  & $430s$ &膨胀循环 \\
+Raptor（SpaceX） & $LOX + CH_4$ & $1.60 \sim 1.70$ & $1850 kN$  & $2300 kN$  & $330s$ &全流预燃 \\
+RD-180（俄罗斯） & $LOX + RP-1$ & $1.55 \sim 1.62$ & $3900 kN$  & $4150 kN$  & $311s$ &双室预燃\\
+%发动机型号	推进剂	海平面推力	真空推力	海平面比冲	典型循环方式
+%RS-25	LOX + LH₂	~875 kN	~1060 kN	~324 s	预燃循环
+%YF-100（中国）	LOX + RP-1	~1200 kN	~1330 kN	~300 s	富氧补燃
+%YF-77（中国）	LOX + LH₂	~700 kN	~750 kN	~430 s	膨胀循环
+%Raptor（SpaceX）	LOX + CH₄	~1850 kN	~2300 kN	~330 s	全流预燃
+%RD-180（俄罗斯）	LOX + RP-1	~3900 kN	~4150 kN	~311 s	双室预燃
+\hline
+\end{tabular} 
+}
+\\[2mm]
+\textit{数据来源：表中所引用的国内外发动机性能指标，均基于 NASA、CASC 及 SpaceX 等权威机构公开参数，以及《Rocket Propulsion Elements》《航天推进技术》等教材与 AIAA/IAC 技术文献中给出的典型广泛应用值，经归纳比对后提取，用于横向性能分析。}
+\end{table}
+
+
+%单图
+\begin{figure}[H] %H为当前位置，!htb为忽略美学标准，htbp为浮动图形
+    \centering %图片居中
+    \includegraphics[width=0.8\textwidth]{流程图白.png} %插入图片，[]中设置图片大小，{}中是图片文件名
+    \caption{程序设计流程图} %最终文档中希望显示的图片标题
+    \label{example_label} %用于文内引用的标签
+\end{figure}
+
+%多图
+\begin{figure}[htbp]
+  \begin{subfigure}{0.31\textwidth}
+    \includegraphics[width=\linewidth]{SLS1型主要参数.png}
+    \caption{SLS1型主要参数} \label{fig:9aaa}
+  \end{subfigure}%
+  \hspace*{\fill}   % maximize separation between subfigures
+  \begin{subfigure}{0.31\textwidth}
+    \includegraphics[width=\linewidth]{SLS1B 型总体结构.png}
+    \caption{SLS1B 型总体结构} \label{fig:9bbb}
+  \end{subfigure}
+  \hspace*{\fill}   % maximizeseparation between subfigures
+  \begin{subfigure}{0.31\textwidth}
+    \includegraphics[width=\linewidth]{SLS芯级结构分解图.png}
+    \caption{SLS芯级结构分解图} \label{fig:9ccc}
+    \end{subfigure}
+\caption{SLS1及SLS1B 型号示意图}
+\label{qmix-train}
+\end{figure}
+
+
+
+
+%代码
+\begin{lstlisting}[language=C,caption={比冲计算程序},label={lst:headers}]
+\\主函数选择模块
+  int main(void) {
+    int choice;
+    set_utf8_console();
+
+    print_header();
+
+    while (1) {
+        print_main_menu();
+        choice = get_user_choice(0, 4);
+
+        switch (choice) {
+            case 1:
+                analyze_preset_engine();
+                break;
+                ...
+}      
+\\预设计算模块中选择计算路径
+void analyze_preset_engine(void) {
+    int engine_choice;
+    EngineData engine;
+    PerformanceResults results;
+
+    system("cls||clear");
+    printf("\n=== 预设发动机性能分析 ===\n\n");
+    printf("1. RS-25 主发动机（液氢液氧）\n");
+    printf("2. SRB 固体助推器\n");
+    printf("0. 返回主菜单\n\n");
+    printf("请选择发动机类型: ");
+
+    engine_choice = get_user_choice(0, 2);
+
+    if (engine_choice == 0)
+        return;
+
+    if (engine_choice == 1) {
+        engine = get_rs25_data();
+        printf("\n已加载 RS-25 发动机数据\n");
+    } else {
+        engine = get_srb_data();
+        printf("\n已加载 SRB 固体助推器数据\n");
+    }
+
+    print_separator();
+    printf("发动机基本参数：\n");
+    print_separator();
+    printf("发动机名称：%s\n", engine.name);
+    printf("发动机类型：%s\n", engine.type);
+    printf("推进剂：%s\n", engine.propellant);
+    printf("燃烧室压力：%.2f MPa\n", engine.chamber_pressure / 1e6);
+    printf("喷管面积比：%.2f\n", engine.area_ratio);
+    printf("比热比 γ：%.3f\n", engine.gamma);
+    printf("气体常数 R：%.2f J/(kg·K)\n", engine.gas_constant);
+    printf("燃烧室温度：%.2f K\n", engine.chamber_temperature);
+    printf("喉部面积：%.4f m²\n", engine.throat_area);
+    printf("混合比 O/F：%.2f\n", engine.mixture_ratio);
+  ...
+  }
+
+\end{lstlisting}
+
+
+
+
+\end{document}
