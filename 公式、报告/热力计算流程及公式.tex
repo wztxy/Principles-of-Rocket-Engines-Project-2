@@ -1,0 +1,1008 @@
+\documentclass[zihao=-4]{ctexart}
+\usepackage[normalem]{ulem}
+\useunder{\uline}{\ul}{}
+%********************导言区宏包引入********************
+\usepackage{xeCJK}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{listings} %代码
+\usepackage{graphicx}
+\usepackage{multicol} %回车换段
+\usepackage{xcolor}
+\usepackage{geometry} %页面设置
+\usepackage{fontspec}
+\usepackage{setspace}
+\usepackage{times}
+\usepackage{fancyhdr} %页眉页脚
+\pagestyle{fancy}
+\usepackage{float} %表格位置
+\usepackage{titlesec} %设置
+\usepackage{titletoc}
+\usepackage{ctex}
+\usepackage{gbt7714}    %控制参考文献格式为国标
+\usepackage{multirow}
+\usepackage{booktabs}   %表格相关
+\usepackage{setspace}   %设置行距
+% 控制列表（itemize/enumerate）间距
+\usepackage{enumitem}
+% 全局设置：去掉 itemize 的额外间距
+\setlist[itemize]{noitemsep, topsep=0pt, parsep=0pt, partopsep=0pt}
+\usepackage{caption} %caption
+\usepackage{subcaption} %子图的caption
+\usepackage{changepage} %左右缩进
+\usepackage{mhchem}
+\usepackage{array}   
+\graphicspath{ {include_picture/} }
+\let\algorithm\relax
+\let\endalgorithm\relax
+\usepackage[ruled,vlined]{algorithm2e}%[ruled,vlined]{
+\usepackage{algpseudocode}
+\usepackage{longtable} 
+\renewcommand{\algorithmicrequire}{\textbf{Input:}} 
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+%定义两个arg
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareCaptionLabelSeparator{mysep}{\space\space}  %自定义caption格式
+\captionsetup[figure]{font={small}, labelfont=bf, labelsep=mysep, textfont=bf}   %图片caption格式
+\captionsetup[table]{font={small}, labelfont=bf, labelsep=mysep, textfont={bf}}   %表格caption格式
+\bibliographystyle{gbt7714-numerical} %修改了title斜体内容
+
+\setmainfont[Path=fonts/, 
+BoldFont = times-new-roman-bold.ttf,
+ItalicFont = times-new-roman-italic.ttf,
+BoldItalicFont = times-new-roman-bold-italic.ttf
+]{times-new-roman.ttf}
+\setmonofont[Path=fonts/]{Courier New.ttf}
+\setCJKfamilyfont{hwzs}[Path=fonts/]{STKzhongsong.ttf}%使用STZhogsong华文中宋字体
+\newcommand{\zhongsong}{\CJKfamily{hwzs}}
+\setCJKfamilyfont{hwxw}[Path=fonts/]{STKxinwei.ttf} % XSP 2023/3/3:
+\newcommand{\xinwei}{\CJKfamily{hwxw}}              %  使用STZxinwei华文新魏字体.
+
+\newcommand{\chuhao}{\fontsize{42pt}{0}}
+\newcommand{\xiaochu}{\fontsize{36pt}{0}}
+\newcommand{\yihao}{\fontsize{28pt}{0}}
+\newcommand{\erhao}{\fontsize{21pt}{0}}
+\newcommand{\xiaoer}{\fontsize{18pt}{0}}
+\newcommand{\sanhao}{\fontsize{16pt}{0}}
+\newcommand{\sihao}{\fontsize{14pt}{0}}
+\newcommand{\xiaosi}{\fontsize{12pt}{0}}
+\newcommand{\wuhao}{\fontsize{10.5pt}{0}}
+\newcommand{\xiaowu}{\fontsize{9pt}{0}}
+\newcommand{\liuhao}{\fontsize{8pt}{0}}
+\newcommand{\qihao}{\fontsize{5.25pt}{0}}
+
+\geometry{left=3cm,right=2cm,top=2.5cm,bottom=2.5cm}
+\geometry{a4paper} % xsp 2023/3/7: 调整纸张大小为A4
+\newcommand{\setParDis}{\setlength {\parskip} {0pt} }
+
+
+
+\begin{document}
+\lhead{}%设置左页眉为空
+\rhead{}%设置左页眉为空
+\setlength{\headwidth}{\textwidth}% 2023/3/3 XSP: 页眉长度适应文本
+
+
+\CTEXsetup[name={,、},number={\chinese{section}}]{section}
+\CTEXsetup[name={（,）},number={\chinese{subsection}}]{subsection}
+\CTEXsetup[name={,.},number={\arabic{subsubsection}}]{subsubsection}
+
+\titleformat{\section}[block]{\sanhao\heiti\centering}{\chinese{section}、}{0pt}{}[]    % XSP 2023/3/3:
+\titleformat{\subsection}[block]{\sihao\heiti}{（\chinese{subsection}）}{0pt}{}[]       %   将正文标题字体由加粗
+\titleformat{\subsubsection}[block]{\xiaosi\heiti}{\arabic{subsubsection}.}{0pt}{}[]   % 修改为黑体。
+\titlespacing{\section}{0pt}{25pt}{12pt}
+\titlespacing{\subsection}{0pt}{7pt}{7pt}
+\titlespacing{\subsubsection}{0pt}{5pt}{4pt}
+
+
+\titlecontents{section}[1.6em]{\addvspace{2pt}\filright}
+{\contentspush{\thecontentslabel\hspace{0.8em}}}
+{}{\titlerule*[8pt]{.}\contentspage}
+
+\titlecontents{subsection}[3.2em]{\addvspace{2pt}\filright}
+{\contentspush{\thecontentslabel\hspace{0.8em}}}
+{}{\titlerule*[8pt]{.}\contentspage}
+
+\titlecontents{subsubsection}[6.4em]{\addvspace{2pt}\filright}
+{\contentspush{\thecontentslabel\hspace{0.8em}}}
+{}{\titlerule*[8pt]{.}\contentspage}
+
+
+\linespread{1.8}
+%行间距为实际行间距乘以1.2,如此处实际为1.5倍行距
+\setlength{\parskip}{0.5\baselineskip}
+
+
+%格式控制部分
+\vspace{12pt}
+\par \
+\par \
+\par \
+\par \
+\par \
+\par \
+\begin{spacing}{3}
+    % \erhao
+    \begin{center}
+      {
+        \fontsize{22pt}{3}\selectfont
+        \zhongsong{热力计算流程及公式} %黑体这样调用，其余字体同理
+      } 
+        % \zhongsong{“冯如杯”竞赛主赛道项目是什么}
+    \end{center}
+\end{spacing}
+
+\par \ 
+\par \
+\par \ 
+\par \
+
+\par \ 
+\begin{center}
+\sanhao
+\centerline{\heiti{}}%封面年月去掉
+\end{center}
+
+\pagenumbering{gobble} %封面无页码
+%hispagestyle{cover} % 封面使用自定义页脚样式，显示日期
+\renewcommand{\headrulewidth}{0pt}%没有页眉装饰线
+\clearpage
+
+\pagenumbering{roman} %摘要目录页小写罗马
+\xiaosi
+\clearpage
+\tableofcontents
+\clearpage
+%----------------****符号说明部分********************
+\newpage
+\newgeometry{left=1cm, right=1cm}
+\setlength{\headwidth}{\textwidth}% 页眉宽度适应文本宽度
+\section*{符号体系}
+\addcontentsline{toc}{section}{符号说明} % 加入目录（如不需要则删除此行）
+\fancyfoot[C]{\thepage}
+\begin{center}
+  
+
+\begin{longtable}{|p{2cm}|p{2cm}|p{4cm}|p{2cm}|p{2cm}|p{4cm}|}
+\hline
+\textbf{符号} & \textbf{单位} & \textbf{含义}
+& \textbf{符号} & \textbf{单位} & \textbf{含义} \\
+\hline
+\endfirsthead  % 表头重复（跨页用）
+
+\hline
+\textbf{符号} & \textbf{单位} & \textbf{含义}
+& \textbf{符号} & \textbf{单位} & \textbf{含义} \\
+\hline
+\endhead
+
+% 每一页的页尾（非最后一页）：在这里添加横线
+\hline
+\endfoot
+
+% 最后一页的页尾：通常也加一条横线，保持统一，也可以设置为空
+\hline
+\endlastfoot
+
+
+% ---- 在这里填写内容 ----
+$(E_k)_{n_k}$ & $\textbackslash$ & 一般化学式 & $(E_k)_{\bar{n_k}}$ & $\textbackslash$ & 单组元假定化学式 \\
+$(E_k)_{N_k}$ & $\textbackslash$ & 推进剂假定化学式 & $M_e$ & 1 & 推进剂元素个数 \\
+$N_k$ & 1 & $(E_k)_{N_k}$中k元素原子个数 & $M_{wrj}$ & g/mol & 第j种推进剂组元的一般化学式分子量 \\
+$M_w$ & g/mol & $(E_k)_{N_k}$分子量 & $A_{w_{k}}$ & g/mol & k元素分子量 \\
+$J_{pc}$ & 1 & 推进剂组元数 & $Y_{pcj}$ & \% & 第j种推进剂组元质量百分数 \\
+$a_{jk}$ & 1 & 1mol第j种燃烧产物组元中k元素原子个数 & $Y_{kj}$ & \% &第j种推进剂组元中k元素的质量分数  \\
+$r_{of}$ & 1 & 燃烧室混合比 &$r_{st}$  & 1 &化学当量混合比 \\
+$\alpha$ & 1 & 余氧系数 & $\chi_{st}$ & 1 &摩尔化学当量混合比 \\
+$h_{PACF}$ & J/kg & 推进剂总焓 & $h_{P,j}$ & J/kg & 第j个推进剂组元的比焓 \\
+$\Delta h^{\ominus}_{f,T_{ref,j}}$ & J/kg & 第j种推进剂组元的标准生成焓 & $c_{p,j}$ & J/(kg·K) &第j种推进剂组元的定压比热 \\
+$T_0$ & K & 推进剂初温 & $T_{ref}$ & K & 标准状态298.15K\\
+$p$ & $Pa$ & 燃烧室压力 & $N_s$ & 1 &燃烧室燃烧产物组分数 \\
+$L$ & 1 & 燃烧室燃烧产物凝相组分数 & $n_j$ & mol & 1mol推进剂燃烧后第j种产物摩尔数（也可直接用化学式写角标）\\
+$n_g$ & mol & 燃烧气相产物总摩尔数 & $p_j$ & $Pa$ & 1mol推进剂燃烧后第j种产物分压\\
+$K_{pi}$ & ${Pa}^{-\Delta \nu_{ci}}$ & 以分压表示的第i种反应的化学平衡常数 & $K_{ni}$ & ${mol}^{-\Delta \nu_c}$ & 以组分摩尔数表示的第i种反应的化学平衡常数\\
+$\Delta \nu_{ci}$ & 1 & 第i种反应的气相化学计量数变化 & $\nu$ & 1 & 化学计量数 \\
+$M_{w_{is}}$ & g/mol & 第is种燃烧产物组元的分子量 & $c_j$ & mol & 第j种燃烧气相产物的近似解  \\
+$g_{mol,is}^{\ominus}$ & J/mol & 第is种气相产物标准摩尔吉布斯自由能 & $g_{mol,is}^{\ominus c}$ & J/mol & 第is种凝相产物标准摩尔吉布斯自由能\\
+$\chi_j $ & \% & 第j种燃烧产物的摩尔分数 & $\mu_j$ & $Pa·s$ &第j种燃烧产物的粘性系数\\
+$\phi_{ij}$& 1 & 燃烧产物组分i和组分j的结合因子 & $\lambda_j$ & $W/(m·K)$ &第j种燃烧产物的导热系数 \\
+$Pr$& 1 & 普朗特数 & $c_{id}^{*}$ & m/s & 理想特征速度\\
+$\sigma_j$ & $A(10^{-10}m)$ & 第j种燃烧组分L-J特征长度 & $\Omega_{\mu,j}$ & 1 & 第j种燃烧组分的碰撞积分 \\
+$T^*$ & K & 折算温度 &  &  & \\
+&  &  &  &  & \\
+&  &  &  &  & \\
+% 继续加行…
+
+\hline
+\end{longtable}
+\end{center}
+
+\newpage
+\section*{待查值}
+\addcontentsline{toc}{section}{待查值} % 加入目录（如不需要则删除此行）
+
+\begin{center}
+
+\begin{longtable}{|p{3cm}|p{2cm}|p{8cm}|p{3cm}|}
+\hline
+\textbf{符号} & \textbf{单位} & \textbf{含义} & \textbf{数据量} \\
+\hline
+\endfirsthead
+
+
+\hline
+\textbf{符号} & \textbf{单位} & \textbf{含义} & \textbf{数据量} \\
+\hline
+\endhead
+
+$J_{pc}$ & 1 & 推进剂组元数 & 1 \\ 
+$M_e$ & 1 & 推进剂元素个数 & 1 \\ 
+$A_{w_{k}}$ & g/mol & 元素 k 的分子量 & $M_e$ \\ 
+$n_{kj}(Y_{kj})$ & 1 & 第 j 种推进剂组元中元素 k 的原子个数（质量分数） & $J_{pc} * M_e$ \\
+$Y_{pcj}$ & \% & 第 j 种推进剂组元质量百分数 & $J_{pc}$ \\
+$r_{of}$ & 1 & 燃烧室混合比 & 1 \\ 
+$\alpha$ & 1 & 余氧系数 & 1 \\ 
+$\Delta h^{\ominus}_{f,T_{ref,j}}$ & J/kg & 第 j 种推进剂组元的标准生成焓 & $J_{pc}$(表格) \\ 
+$c_{p,j}$ & J/(kg·K) & 第 j 种推进剂组元定压比热 & $J_{pc}$(NASA 7/9系数表或...)\\ 
+$T_0$ & K & 推进剂初温 & 1 \\ 
+$a_{jk}$ & 1 & 1 mol 第 j 种产物组元中 k 元素原子数 & $N_s * M_e$ \\ 
+$p$ & $Pa$ & 燃烧室压力 & 1 \\
+$N_s$ \& $L$ & 1 & 燃烧室燃烧产物组分数 & 2(燃烧产物表) \\ 
+$M_{w_{j}}$ & g/mol & 第j种燃烧产物组元的分子量 & $N_s$ \\
+$c_j$ & mol & 第j种燃烧气相产物的近似解 & $N_s-L$ \\ 
+$g_{mol,j}^{\ominus}$,$h_{mol,j}^{\ominus}$, $s_{mol,j}^{\ominus}$,$c_{pmol,j}^{\ominus}$ & ...... & 第j种燃烧产物标准摩尔吉布斯自由能,焓，熵，定压比容 & $4N_s$(NASA 7/9系数表) \\ 
+$\sigma_j$,$\Omega_{\mu,j}$ & $A,1$ & 计算粘度所需系数 & $2(N_s-L)$附录12，13，14 \\ 
+&  &  &  \\ 
+&  &  &  \\ 
+&  &  &  \\ 
+&  &  &  \\ 
+\hline
+\end{longtable}
+
+\end{center}
+
+
+
+
+\restoregeometry
+\setlength{\headwidth}{\textwidth}
+\newpage  % 表格结束后开始正文（不需要新页可删除）
+
+
+
+%********************正文部分*******************
+\pagenumbering{arabic} %正文页码从1开始，用阿拉伯数字
+\setcounter{page}{1} 
+\section*{说明}
+\addcontentsline{toc}{section}{说明}
+\subsection{目标}
+\begin{spacing}{1.5}
+  \setParDis %设置段间距为
+  已知：推进剂组分（化学式以及质量分数），燃烧室压强$p$
+
+ 
+  求解：燃烧室及喷管的热力性质，重点为：燃烧室组分$n_k$与燃烧室温度$T_{c}^{*}$
+\end{spacing}
+\subsection{模型假设}
+采取以下模型计算，计算得到参数均为理想值
+\subsubsection{燃烧室}
+\begin{spacing}{1.5}
+  \setParDis
+  \begin{itemize}
+  \item 理想气体（完全气体），无粘，不电离
+  \item 处于化学平衡状态（流速低（近似为0），反应时间或弛豫时间远小于流动时间）
+  \item 绝热、定压
+  \item 气流速度为0
+\end{itemize}
+\end{spacing}
+\subsubsection{喷管}
+\begin{spacing}{1.5}
+  \setParDis
+  \begin{itemize}
+  \item 理想气体（完全气体），无粘，不电离
+  \item 平衡流动$\textbackslash$ 冻结流动$\textbackslash$突然冻结的流动（推荐采取第三种）
+  \item 绝热、定熵
+  \item 一维流动、两相平衡流动
+\end{itemize}
+\end{spacing}
+\subsection{计算流程}
+\begin{itemize}
+  \item 假定化学式、总焓
+  \item 给定燃烧室压强$p$，试算$T_{f}$下燃烧室平衡组分
+  \item 确定燃烧室温度$T_{c}^{*}$，确定燃烧室组分$n_k$
+  \item 计算燃烧室、喷管热力性质、输运性质
+\end{itemize}
+
+\subsection{符号}
+关于符号体系请及公式的意义请查阅“符号体系”部分，后续仅列出计算所需公式，公式推导过程或原理请见课程讲义或群聊交流。
+
+\subsection{文档}
+后续章节中：章节名为计算阶段（计算块），小节名为一个计算物理量，分为流程计算（从前到后依次计算）和延伸计算两种，小节下的子小节为不同已知条件下的计算公式。
+
+\section{假定化学式}
+\subsection{第j种推进剂组元的假定化学式$\bar{n_{kj}}$(流程计算)}
+\subsubsection{已知组元分子式}
+已知：$(E_k)_{n_k}$、$n_{kj}$、${A_{w_k}}$，
+
+求解：$(E_k)_{\bar{n_k}}$、$\bar{n_{kj}}$
+
+第j种推进剂组元的一般化学式分子量：
+\begin{equation}
+  M_{wrj} = \sum_{k=1}^{M_e}A_{w_k}n_{kj}, j = 1,2,3...J_{pc}
+  
+  
+\end{equation}
+
+第j种推进剂组元的假定化学式：
+\begin{equation}
+  \bar{n_{kj}} = \frac{1000}{M_{wrj}}n_{kj}, k=1,2,3...M_e, j = 1,2,3...J_{pc}
+\end{equation}
+
+\subsubsection{已知组元元素质量分数}
+已知：$Y_{kj}$、${A_{w_k}}$
+
+求解：$(E_k)_{\bar{n_k}}$、$\bar{n_{kj}}$
+
+第j种推进剂组元的假定化学式：
+\begin{equation}
+  \bar{n_{kj}} = \frac{1000}{A_{wk}}Y_{kj}, k=1,2,3...M_e, j = 1,2,3...J_{pc}
+\end{equation}
+
+
+\subsection{当量混合比 $r_{st}$（延伸计算）}
+（多用于液发，双组元液体推进剂）
+\subsubsection{已知元素质量百分数}
+已知：$Y_{ko}$和$Y_{kf}$ (o,f分别代表氧化剂，燃料)(这里的k = C,H,O,代表元素)
+
+求解：$r_{st}$
+
+\begin{equation}
+  r_{st} = \frac{\frac{2A_{w_O}}{A_{w_C}}Y_{Cf} + \frac{A_{w_O}}{2A_{w_H}}Y_{Hf} - Y_{Of}}{Y_{Oo} -\frac{2A_{w_O}}{A_{w_C}}Y_{Co} - \frac{A_{w_O}}{2A_{w_H}}Y_{Ho}  }
+\end{equation}
+
+注意：一般情况只考虑C,H,O元素，微量N,Cl,S可忽略，需精确计算或其他元素含量较高时需修正公式
+
+\subsubsection{已知推进剂化学式}
+已知：$n_{ko}$和$n_{kf}$ (o,f分别代表氧化剂，燃料)(这里的k = C,H,O,代表元素)
+
+求解：$r_{st}$
+
+第j种推进剂组元的一般化学式分子量：
+\begin{equation}
+  M_{wrj} = \sum_{k=1}^{M_e}A_{w_k}n_{kj}, j = o,f
+\end{equation}
+
+实际混合比：
+\begin{equation}
+  r_{st} = \frac{(2n_{Cf} + 0.5n_{Hf} - n_{Of})/M_{wrf}}{(n_{Oo} - 2n_{Co} -0.5n_{Ho})/M_{wro}}
+\end{equation}
+
+注意：一般情况只考虑C,H,O元素，微量N,Cl,S可忽略，需精确计算或其他元素含量较高时需修正公式
+
+一些其他参数：
+\begin{equation}
+  \chi_{st} = \frac{(2n_{Cf} + 0.5n_{Hf} - n_{Of})}{(n_{Oo} - 2n_{Co} -0.5n_{Ho})} = r_{st}\frac{M_{wrf}}{M_{wro}}
+\end{equation}
+\begin{equation}
+    \chi_{of} = r_{of}\frac{M_{wrf}}{M_{wro}}\\
+\end{equation}
+\begin{equation}
+    \alpha = \frac{r_{of}}{r_{st}} = \frac{\chi_{of}}{\chi_{st}}
+\end{equation}
+
+\subsection{推进剂假定化学式$N_k$（流程计算）}
+必知：$\bar{n_{kj}}$、$J_{pc}$
+
+求解：$N_k$
+\subsubsection{由推进剂组元质量分数$Y_{pcj}$计算假定化学式$N_k$}
+\begin{equation}
+  N_k = \sum_{j=1}^{J_{pc}}\bar{n_{kj}}Y_{pcj}, k=1,2,3...M_e
+\end{equation}
+\subsubsection{由混合比$r_{of}$计算假定化学式$N_k$}
+\begin{equation}
+  N_k = \frac{r_{of}\bar{n_{ko}} + \bar{n_{kf}}}{1 + r_{of}}, k=1,2,3...M_e
+\end{equation}
+
+
+\section{总焓}
+\subsection{推进剂的总焓$h_{PACF}$（流程计算）}
+必知：$\Delta h^{\ominus}_{f,T_{ref,j}}$、$c_{p,j}$、$T_0$
+
+求解：$h_{PACF}$
+
+\subsubsection{由推进剂组元质量分数$Y_{pcj}$计算推进剂总焓$h_{PACF}$}
+\begin{equation}
+  h_{PACF}  \approx \sum_{j=1}^{J_{pc}}Y_{pcj}\left[\Delta h^{\ominus}_{f,T_{ref,j}} + c_{p,j}(T_0 - T_{ref})\right]
+\end{equation}
+\subsubsection{由混合比$r_{of}$计算推进剂总焓$h_{PACF}$}
+\begin{equation}
+  h_{PACF} \approx \frac{r_{of}\left[\Delta h^{\ominus}_{f,T_{ref,o}} + c_{p,o}(T_0 - T_{ref})\right] + \left[\Delta h^{\ominus}_{f,T_{ref,f}} + c_{p,f}(T_0 - T_{ref})\right]}{1 + r_{of}}
+\end{equation}
+
+
+\section{燃烧产物平衡组分}
+已知：$p$、$N_k$、$a_{jk}$
+
+求解:$n_j$
+\subsection{化学平衡常数法求$n_j$（流程计算）}
+
+\subsubsection{化学平衡常数表示}
+由于化学方程符号表达较为繁琐，以下列反应为例（无凝相）：
+\begin{center}
+    \ce{$\nu_1$ A_1 + $\nu_2$ A_2 <=> $\nu_3$ A_3 + $\nu_4$ A_4}
+\end{center}
+
+有：
+
+\begin{equation}
+\left\{
+\begin{aligned}
+  K_{n} &= \frac{n_{3}^{\nu_3}n_{4}^{\nu_4}}{n_{1}^{\nu_1}n_{2}^{\nu_2}}\\
+  K_{p} &= \frac{p_{3}^{\nu_3}p_{4}^{\nu_4}}{p_{1}^{\nu_1}p_{2}^{\nu_2}}\\
+  \Delta \nu_c &= \sum_{products}\nu - \sum_{reactants}\nu \\
+  p_j &= \frac{n_j}{n_g}p\\
+  K_n &= K_p\left(\frac{p}{n_g}\right)^{-\Delta \nu_c}
+\end{aligned}
+\right.
+\end{equation}
+
+若有凝相组分：
+\begin{center}
+    \ce{$\nu_1$ A_1 + $\nu_2$ A_2 <=> $\nu_3$ A_3(c) + $\nu_4$ A_4}
+\end{center}
+实际有：
+
+\begin{equation}
+\left\{
+\begin{aligned}
+    K_{p} &= \frac{p_{3_{(c)}}^{\nu_3}p_{4}^{\nu_4}}{p_{1}^{\nu_1}p_{2}^{\nu_2}}\\
+    K_{p(c)} &= \frac{K_P}{p_{3_{(c)}}^{\nu_3}}  = \frac{p_{4}^{\nu_4}}{p_{1}^{\nu_1}p_{2}^{\nu_2}}\\
+\end{aligned}
+\right.
+\end{equation}
+
+后续取$K_{p(c)}$进行计算。
+
+\subsubsection{求解方程组(摩尔数表示)：}
+
+
+\begin{equation}
+\text{$M_e$个质量守恒方程}
+\left\{
+\begin{aligned}
+    N_k = \sum_{j=1}^{N_s}a_{jk}n_j, \quad k = 1,2,3...M_e \\
+\end{aligned}
+\right.
+\end{equation}
+\begin{equation}
+\text{$N_s-M_e$个化学平衡方程}
+\left\{
+\begin{aligned}
+    \frac{n_{3}^{\nu_3}n_{4}^{\nu_4}}{n_{1}^{\nu_1}n_{2}^{\nu_2}} = K_{pi}\left(\frac{p}{n_g}\right)^{-\Delta \nu_i} \quad i = 1,2,3...N_s-M_e\\
+\end{aligned}
+\right.
+\end{equation}
+
+\begin{equation}
+\text{1个补充方程}
+\left\{
+\begin{aligned}
+    n_g = \sum_{j=L+1}^{Ns}n_j\\
+\end{aligned}
+\right.
+\end{equation}
+
+\subsubsection{求解方程组(分压表示)：}
+\begin{equation}
+\text{$M_e$个压强平衡方程}
+\left\{
+\begin{aligned}
+    N_k =\sum_{j=1}^{L}a_{jk}n_j + \frac{1000}{\sum_{j=L+1}^{N_s}p_jM_{w_{j}}}\sum_{j=L+1}^{N_s}a_{jk}p_j, \quad k = 1,2,3...M_e \\
+\end{aligned}
+\right.
+\end{equation}
+\begin{equation}
+\text{$N_s-M_e$个化学平衡方程}
+\left\{
+\begin{aligned}
+    \frac{p_{3}^{\nu_3}p_{4}^{\nu_4}}{p_{1}^{\nu_1}p_{2}^{\nu_2}} = K_{pi}, \quad i = 1,2,3...N_s-M_e\\
+\end{aligned}
+\right.
+\end{equation}
+  
+\begin{equation}
+\text{1个补充方程}
+\left\{
+\begin{aligned}
+    p = \sum_{j=L+1}^{Ns}p_j\\
+\end{aligned}
+\right.
+\end{equation}
+求解过程参照教材P112：例5-25、5-26.
+
+\subsection{最小吉布斯自由能法求$n_j$（流程计算）}
+已知：$p$、$N_k$、$M_e$、$a_{jk}$、$c_j$、$g_{mol,is}^{\ominus}$、$g_{mol,is}^{\ominus c}$
+
+求解：$n_j$
+
+\subsubsection{前置参数：}
+
+\subsubsection{求解矩阵：}
+略
+
+
+
+\section{热力参数与输运性质}
+\subsection{燃烧室Combustion Chamber}
+1-23的计算公式可封装为一个函数（输入为组分，压强，温度），在喷管计算中同样适用
+\subsubsection{燃烧产物的焓}
+略
+\subsubsection{燃烧室温度$T$}
+试值法
+\subsubsection{凝相、气相组分质量分数}
+
+\begin{equation}
+\left\{
+  \begin{aligned}
+    Y_{c} &= \sum_{is=1}^{L}M_{w_{is}}n_{is} \\
+    Y_{g} &= 1 - Y_{c} \\
+  \end{aligned}
+\right. 
+\end{equation}
+
+\subsubsection{燃烧产物平均摩尔质量}
+\begin{equation}
+  M_{w_m} = \frac{1}{n_g} (kg/mol) = \frac{1000}{n_g} (g/mol)
+\end{equation}
+
+\subsubsection{燃烧产物平均密度}
+\begin{equation}
+  \rho_m = \frac{p}{n_gR_0T}
+\end{equation}
+
+\subsubsection{传统意义燃烧产物平均摩尔质量}
+\begin{equation}
+  M_{W_{m}^{`}} = \frac{1}{\sum_{is=1}^{N_s}n_is} (kg/mol) 
+\end{equation}
+
+\subsubsection{气相产物平均摩尔质量}
+\begin{equation}
+  M_{w_g} = \frac{Y_g}{n_g} = \frac{1-Y_c}{n_g}
+\end{equation}
+
+\subsubsection{燃烧产物等价气体常数}
+\begin{equation}
+  R_m = \frac{R_0}{M_{w_m}} = Y_gR_g = R_0n_g
+\end{equation}
+
+\subsubsection{气相产物平均气体常数}
+\begin{equation}
+  R_g = \frac{R_0}{M_{w_g}}
+\end{equation}
+
+\subsubsection{求偏微分（矩阵求解）}
+求解偏微分$\left(\frac{\partial \ln n_{j}}{\partial \ln T}\right)_{p}$、$\left(\frac{\partial \ln n_{g}}{\partial \ln T}\right)_{p}$、$\left(\frac{\partial \ln v}{\partial \ln T}\right)_{p}$、$\left(\frac{\partial \ln n_{g}}{\partial \ln p}\right)_{T}$、$\left(\frac{\partial \ln v}{\partial \ln p}\right)_{T}$、$\left(\frac{\partial \ln n_j}{\partial \ln p}\right)_T$
+
+线性方程组1求：$\left(\frac{\partial \ln n_{j}}{\partial \ln T}\right)_{p}$、$\left(\frac{\partial \ln n_{g}}{\partial \ln T}\right)_{p}$
+
+\begin{equation}
+\text{$N_s+M_e+1$}
+\left\{
+\begin{aligned}
+  -\sum_{k=1}^{M_e}\left[a_{j,k}\left(\frac{\partial \lambda_{L,k}}{\partial \ln T}\right)_p\right] &= \frac{h_{mol,j}^{\ominus c}}{R_0T}, \quad j = 1,2...L\\
+  \left(\frac{\partial \ln n_{j}}{\partial \ln T}\right)_{p} - \left(\frac{\partial \ln n_{g}}{\partial \ln T}\right)_{p}-\sum_{k=1}^{M_e}\left[a_{j,k}\left(\frac{\partial \lambda_{L,k}}{\partial \ln T}\right)_p\right] &= \frac{h_{mol,j}^{\ominus }}{R_0T}, \quad j = L+1,L+2...N_s\\
+  \sum_{j=1}^{N_s}\left[a_{j,k}n_{j}\left(\frac{\partial \ln n_{j}}{\partial \ln T}\right)_{p}\right] &= 0, \quad k = 1,2...M_e\\
+  \sum_{j=L+1}^{N_s}\left[n_{j}\left(\frac{\partial \ln n_{j}}{\partial \ln T}\right)_{p}\right] - n_g\left(\frac{\partial \ln n_{g}}{\partial \ln T}\right)_{p} &= 0\\
+\end{aligned}
+\right.
+\end{equation}
+
+线性方程组2求：$\left(\frac{\partial \ln n_{g}}{\partial \ln p}\right)_{T}$、$\left(\frac{\partial \ln n_j}{\partial \ln p}\right)_T$
+
+将线性方程组1(28)的右侧从上至下改为(0,-1,0,0),求解得到的$\left(\frac{\partial \ln n_{g}}{\partial \ln T}\right)_{p}$数值即为$\left(\frac{\partial \ln n_{g}}{\partial \ln p}\right)_{T}$
+
+另有：
+\begin{equation}
+\left\{
+\begin{aligned}
+  \left(\frac{\partial \ln v}{\partial \ln T}\right)_{p} &= 1 + \left(\frac{\partial \ln n_{g}}{\partial \ln T}\right)_{p} \\
+  \left(\frac{\partial \ln v}{\partial \ln p}\right)_{T} &= -1 + \left(\frac{\partial \ln n_{g}}{\partial \ln p}\right)_{T}
+\end{aligned}
+\right.
+\end{equation}
+
+则目标所求6个偏微分全部可得。
+\subsubsection{燃烧产物的平衡定压比热}
+\begin{equation}
+  c_p = \sum_{j=1}^{N_s}n_jc_{pmol,j} + \sum_{j=1}^{L}\frac{n_jh_{mol,j}}{T}\left(\frac{\partial \ln n_{j}}{\partial \ln T}\right)_{p} + \sum_{j=L+1}^{N_s}\frac{n_jh_{mol,j}}{T}\left(\frac{\partial \ln n_{j}}{\partial \ln T}\right)_{p}
+\end{equation}
+
+\subsubsection{燃烧产物平衡定容比热}
+\begin{equation}
+  c_v = c_p + n_gR_0\frac{\left(\frac{\partial \ln v}{\partial \ln T}\right)_{p}^{2}}{\left(\frac{\partial \ln v}{\partial \ln p}\right)_{T}}
+\end{equation}
+
+\subsubsection{平衡比热比}
+\begin{equation}
+  \gamma \equiv \frac{c_p}{c_v}
+\end{equation}
+
+\subsubsection{等熵指数}
+\begin{equation}
+  \gamma_s = -\frac{\gamma}{\left(\frac{\partial \ln v}{\partial \ln p}\right)_{T}}
+\end{equation}
+
+\subsubsection{平衡声速}
+\begin{equation}
+  a_{s}^{2} = \gamma_sR_mT = \gamma_sn_gR_0T
+\end{equation}
+
+\subsubsection{冻结定压比热}
+\begin{equation}
+  c_{p,f} = \sum_{j=1}^{N_s}n_jc_{pmol,j}
+\end{equation}
+
+\subsubsection{冻结定容比热}
+\begin{equation}
+  c_{v,f} = c_{p,f} - n_gR_0
+\end{equation}
+
+\subsubsection{冻结比热比}
+\begin{equation}
+  \gamma_f \equiv \frac{c_{p,f}}{c_{v,f}}
+\end{equation}
+
+\subsubsection{冻结声速}
+\begin{equation}
+  a_{s,f}^{2} = \gamma_fR_mT = \gamma_fn_gR_0T
+\end{equation}
+
+\subsubsection{燃烧产物的熵}
+\begin{equation}
+  s = \sum_{j=1}^{N_s}n_js_{mol,j}^{\ominus} - \sum_{j=L+1}^{N_s}\left(R_0n_j \ln\frac{n_j}{n_g}\right) - R_0n_g \ln p
+\end{equation}
+
+\subsubsection{燃烧产物粘性系数}
+
+\begin{equation}
+  \chi_{j} \equiv \frac{n_j}{n_g}, \quad j = L+1,L+2...N_s
+\end{equation}
+\begin{equation}
+  \mu_j = 2.6693 \times 10^{-6}\frac{\left(M_{w_{j}}T\right)^{0.5}}{\sigma_{j}^{2}\Omega_{\mu,j}}
+\end{equation}
+
+\begin{equation}
+  \phi_{ij} = \frac{1}{\sqrt{8}}\left(1+\frac{M_{w_i}}{M_{w_j}}\right)^{-\frac{1}{2}}\left[1+\left(\frac{\mu_i}{\mu_j}\right)^{\frac{1}{2}}\left(\frac{M_{w_j}}{M_{w_i}}\right)^{\frac{1}{4}}\right]^{2}
+\end{equation}
+
+\begin{equation}
+  \mu = \sum_{i=L+1}^{N_s}\frac{\chi_i\mu_i}{\sum_{j=L+1}^{N_s}\chi_j\phi_{ij}}
+\end{equation}
+
+\subsubsection{燃烧产物导热系数}
+\begin{equation}
+  \lambda_{j} = 10^2 \times 4.4184\frac{10\mu_j}{10^3M_{w_j}}\left(1.32\frac{c_{pmol,j}}{4.184} + 0.45\frac{R_0}{4.184}\right)
+\end{equation}
+
+\begin{equation}
+  \lambda = \sum_{i=L+1}^{N_s}\frac{\lambda_i}{1+1.065\sum_{j=L+1,j\neq i}^{N_s}\frac{\chi_j}{\chi_i}\phi_{ij}}
+\end{equation}
+
+\subsubsection{燃烧产物普朗特数}
+\begin{equation}
+  Pr = \frac{\mu c_p}{\lambda}
+\end{equation}
+
+\subsubsection{理想特征速度}
+\begin{equation}
+  \Gamma = \sqrt{\gamma\left(\frac{2}{\gamma +1}\right)^{\frac{\gamma+1}{\gamma-1}}}
+\end{equation}
+
+燃烧室c计算特征速度：
+\begin{equation}
+  c_{id}^{*} = \frac{\sqrt{T_cR_0/M_{w_{m,c}}}}{\Gamma_{m,c}}
+\end{equation}
+
+喷管t计算特征速度（更精确）：
+\begin{equation}
+  c_{id}^{*} = \frac{\sqrt{T_{t}^{*}R_0/M_{w_{m,t}}}}{\Gamma_{m,t}}
+\end{equation}
+
+\subsection{喷管Throat}
+计算方法：
+\begin{itemize}
+  \item 平衡膨胀：牛顿法、内插法
+  \item 组分冻结膨胀： 牛顿法、内插法
+  \item 突然冻结膨胀（平衡膨胀+组分冻结膨胀）
+\end{itemize}
+
+计算条件（确定某一截面的方式）：
+\begin{itemize}
+  \item 压强
+  \item 喷管压强比
+  \item 喷管面积比
+  \item 马赫数
+  \item 温度
+\end{itemize}
+
+已知：
+\begin{itemize}
+  \item 燃烧室燃烧产物的熵$s_c$
+  \item 燃烧室燃烧产物平衡组分$n_j$
+  \item 产物组分标准熵$s_{mol,j}^{\ominus}$及其7/9系数形式公式
+\end{itemize}
+
+求解：
+
+喷管某一截面上的温度、压强、马赫数、组分、热力参数与输运性质
+
+注意：
+
+喷管中的$T,p$大大低于燃烧室，注意凝相气相组分数目即$L,N_s$的变化并相应的修改公式
+
+
+\subsubsection{给定压强$p$}
+以给定设计高度喷管出口截面$p_e$为例，燃烧室压强为做区分标记为$p_c$
+
+以下为平衡膨胀公式，若为组分冻结膨胀，则喷管中燃烧产物的组分$n_{j,e} = n_{j,c}$且不变。所以牛顿法中的$ \left(\frac{\partial \ln n_j}{\partial \ln T}\right)_{p}, \left(\frac{\partial \ln n_g}{\partial \ln T}\right)_{p} = 0$
+内插法时不需要用吉布斯自由能计算组分，直接修改热力参数函数中的温度与压强得到熵与其他参数
+
+牛顿法：
+\begin{equation}
+  \varphi\left(T\right) = \sum_{j=1}^{N_s}n_js_{mol,j}^{\ominus} - \sum_{j=L+1}^{N_s}R_0n_j\ln \frac{n_j}{n_g} - R_0n_g\ln p - s_c
+\end{equation}
+
+\begin{equation}
+  \begin{split}
+    \left(\frac{\partial \varphi}{\partial T}\right)_p 
+    &= \sum_{j=1}^{N_s}\left[\frac{n_js_{mol,j}^{\ominus}}{T} \left(\frac{\partial \ln n_j}{\partial \ln T}\right)_{p} + n_j \frac{\partial s_{mol,j}^{\ominus}}{\partial T}\right] \\
+    &\quad -\sum_{j=L+1}^{N_s}\left[\frac{R_0n_j \ln \frac{n_j}{n_g} }{T}\left(\frac{\partial \ln n_j}{\partial \ln T}\right)_{p} + \frac{R_0n_j}{T}\left(\left(\frac{\partial \ln n_j}{\partial \ln T}\right)_{p} - \left(\frac{\partial \ln n_g}{\partial \ln T}\right)_{p}\right)\right] \\
+    &\quad -\frac{R_0n_g\ln p}{T}\left(\frac{\partial \ln n_g}{\partial \ln T}\right)_p
+  \end{split}
+\end{equation}
+
+\begin{equation}
+  \left(\frac{\partial \varphi}{\partial T}\right)_{p}^{\left(n\right)}\left(T^{\left(n+1\right)} -T^{\left(n\right)}\right) = -\varphi\left(T^{\left(n\right)}\right),\quad n = 0,1,2\dots
+\end{equation}
+
+(53)为迭代公式，(51)(52)为参数计算公式;
+
+初值温度可用以下公式计算，式中$\bar{\gamma}$选用燃烧产物平均等熵指数或燃烧室产物等熵指数或经验（查资料）选取：
+\begin{equation}
+  T^{0} = T_c\left(\frac{p_e}{p_c}\right)^{\frac{\bar{\gamma}-1}{\bar{\gamma}}}
+\end{equation}
+初值组分用吉布斯自由能程序(p,T)代入解出
+
+(52)中的$\left(\frac{\partial \ln n_j}{\partial \ln T}\right)_{p}$,$\left(\frac{\partial \ln n_g}{\partial \ln T}\right)_p$由方程组(29)更改温度，压强，组分算出。$\frac{\partial s_{mol,j}^{\ominus}}{\partial T}$用NASA 7/9系数公式计算
+
+最终得到$T_e$,$p_e$(已知),$n_{j,e}$
+
+\par \
+\par \
+\par \
+内插法：
+
+用(54)计算初步温度$T$,式中$\bar{\gamma}$选用燃烧产物平均等熵指数或燃烧室产物等熵指数或经验（查资料）选取。
+然后在$T$左右给定温度差$\Delta T$(100K\dots)选取温度$T_{e1},T_{e2}$
+
+调用吉布斯自由能函数计算$\left(p_e,T_{e1}\right),\left(p_e,T_{e2}\right)$下产物的平衡组分和热力学参数
+
+若$s_{e1} \leq s_c \leq s_{e2}$,线性内插：
+
+\begin{equation}
+  T_e = T_{e1} + \frac{s_e - s_{e1}}{s_{e2}-s_{e1}}\left(T_{e2} - T_{e1}\right)
+\end{equation}
+
+若非，继续插值继续迭代，最终得到$T_e,p_e,n_{j,e}$
+
+
+
+\subsubsection{给定温度}
+牛顿法：
+
+\begin{equation}
+  \varphi\left(p\right) = \sum_{j=1}^{N_s}n_js_{mol,j}^{\ominus} - \sum_{j=L+1}^{N_s}R_0n_j\ln \frac{n_j}{n_g} - R_0n_g\ln p - s_c
+\end{equation}
+
+\begin{equation}
+  \begin{split}
+    \left(\frac{\partial \varphi}{\partial p}\right)_T 
+    &= \sum_{j=1}^{N_s}\frac{s_{mol,j}^{\ominus}n_j}{p}\left(\frac{\partial \ln n_j}{\partial \ln p}\right)_T \\
+    &\quad -\sum_{j=L+1}^{N_s}\left[\frac{R_0n_j \ln \frac{n_j}{n_g} }{p}\left(\frac{\partial \ln n_j}{\partial \ln p}\right)_{T} + \frac{R_0n_j}{p}\left(\left(\frac{\partial \ln n_j}{\partial \ln p}\right)_{T} - \left(\frac{\partial \ln n_g}{\partial \ln p}\right)_{T}\right)\right] \\
+    &\quad -\frac{R_0n_g\ln p}{p}\left(\frac{\partial \ln n_g}{\partial \ln p}\right)_T - \frac{R_0n_g}{p}
+  \end{split}
+\end{equation}
+
+\begin{equation}
+  \left(\frac{\partial \varphi}{\partial p}\right)_{T}^{\left(n\right)}\left(p^{\left(n+1\right)} -p^{\left(n\right)}\right) = -\varphi\left(p^{\left(n\right)}\right),\quad n = 0,1,2\dots
+\end{equation}
+
+(58)为迭代公式，(56)(57)为参数计算公式;
+
+初值压强可用以下公式计算，式中$\bar{\gamma}$选用燃烧产物平均等熵指数或燃烧室产物等熵指数或经验（查资料）选取：
+\begin{equation}
+  p^{0} = p_c\left(\frac{T_e}{T_c}\right)^{\frac{\bar{\gamma}}{\bar{\gamma}-1}}
+\end{equation}
+初值组分用吉布斯自由能程序(p,T)代入解出
+
+(57)中的$\left(\frac{\partial \ln n_j}{\partial \ln p}\right)_{T}$,$\left(\frac{\partial \ln n_g}{\partial \ln p}\right)_T$由方程组(29)之后的线性方程组2 更改温度，压强，组分算出。
+
+最终得到$T_e$,$p_e$,$n_{j,e}$
+
+
+
+\subsubsection{给定喷管压强比}
+
+先用压强比$\varepsilon = \frac{p}{p_c}$计算出$p$后按照给定压强公式计算
+\subsubsection{给定马赫数}
+牛顿法：
+\begin{equation}
+  \varphi_1\left(p,T\right) = \sum_{j=1}^{N_s}n_js_{mol,j}^{\ominus} - \sum_{j=L+1}^{N_s}R_0n_j\ln \frac{n_j}{n_g} - R_0n_g\ln p - s_c
+\end{equation}
+\begin{equation}
+  \varphi_2\left(p,T\right) = 2\left(h_c - \sum_{j=1}^{N_s}n_jh_{mol,j}\right) - Ma^{2}\gamma_sn_gR_0T
+\end{equation}
+
+$\left(\frac{\partial \varphi_1}{\partial T}\right)_p$,$\left(\frac{\partial \varphi_1}{\partial p}\right)_T$的计算如式(52)(57)
+
+\begin{equation}
+  \begin{split}
+    \left(\frac{\partial \varphi_2}{\partial T}\right)_p 
+    &= -2\sum_{j=1}^{N_s}\left[\frac{n_jh_{mol,j}}{T}\left(\frac{\partial \ln n_j}{\partial \ln T}\right)_{p} + n_j \frac{\partial h_{mol,j}}{\partial T}\right] \\
+    &\quad - Ma^{2}\left[\left(\frac{\partial \gamma_s}{\partial T}\right)_pn_gR_0T + \gamma_sn_gR_0\left(\frac{\partial \ln n_g}{\partial \ln T}\right)_p + \gamma_sn_gR_0\right]
+  \end{split}
+\end{equation}
+
+\begin{equation}
+  \begin{split}
+    \left(\frac{\partial \varphi_2}{\partial p}\right)_T 
+    &= -2\sum_{j=1}^{N_s}\frac{n_jh_{mol,j}}{p}\left(\frac{\partial \ln n_j}{\partial \ln p}\right)_{T} \\
+    &\quad - Ma^{2}\left[\left(\frac{\partial \gamma_s}{\partial p}\right)_Tn_gR_0T + \frac{\gamma_sn_gR_0T}{p}\left(\frac{\partial \ln n_g}{\partial \ln p}\right)_T\right]
+  \end{split}
+\end{equation}
+
+(62)(63)中关于$\gamma_s$的偏导数计算公式推导过于繁琐，推荐使用编程：差分、局部拟合等方法计算。若精度不足确实需要公式推导请联系我
+
+
+迭代方程组如下：
+\begin{equation}
+  \left\{
+  \begin{aligned}
+    \left(\frac{\partial \varphi_1}{\partial T}\right)_{p}^{\left(n\right)}\left(T^{\left(n+1\right)} -T^{\left(n\right)}\right) + \left(\frac{\partial \varphi_1}{\partial p}\right)_{T}^{\left(n\right)}\left(p^{\left(n+1\right)} -p^{\left(n\right)}\right) &= -\varphi_1\left(p^{\left(n\right)},T^{\left(n\right)}\right)\\
+    \left(\frac{\partial \varphi_2}{\partial T}\right)_{p}^{\left(n\right)}\left(T^{\left(n+1\right)} -T^{\left(n\right)}\right) + \left(\frac{\partial \varphi_2}{\partial p}\right)_{T}^{\left(n\right)}\left(p^{\left(n+1\right)} -p^{\left(n\right)}\right) &= -\varphi_2\left(p^{\left(n\right)},T^{\left(n\right)}\right)\\
+  \end{aligned}
+  \right.
+\end{equation}
+
+\subsubsection{给定喷管面积比}
+牛顿法：
+
+先利用$Ma = 1$条件计算出喉部参数$\rho_t,u_t$，给定面积比$\frac{A}{A_t}$
+
+\begin{equation}
+  \varphi_1\left(p,T\right) = \sum_{j=1}^{N_s}n_js_{mol,j}^{\ominus} - \sum_{j=L+1}^{N_s}R_0n_j\ln \frac{n_j}{n_g} - R_0n_g\ln p - s_c
+\end{equation}
+
+\begin{equation}
+  \varphi_2\left(p,T\right) = \rho u - \frac{\rho_tu_tA_t}{A} = \frac{p\sqrt{2\left(h_c - \sum_{j=1}^{N_s}n_jh_{mol,j}\right)}}{n_gR_0T} - \frac{\rho_tu_tA_t}{A}
+\end{equation}
+
+$\left(\frac{\partial \varphi_1}{\partial T}\right)_p$,$\left(\frac{\partial \varphi_1}{\partial p}\right)_T$的计算如式(52)(57)
+
+\begin{equation}
+  \begin{split}
+  \left(\frac{\partial \varphi_2}{\partial T}\right)_p 
+  &= -u\frac{\rho\left[\left(\frac{\partial \ln n_g}{\partial \ln T}\right)_p +1\right]}{T} -\rho\frac{\left[\sum_{j=1}^{N_s}\frac{n_jh_{mol,j}}{T}\left(\frac{\partial \ln n_j}{\partial \ln T}\right)_p + n_j\frac{\partial h_{mol,j}}{\partial T}\right]}{u}
+  \end{split}
+\end{equation}
+
+\begin{equation}
+  \begin{split}
+  \left(\frac{\partial \varphi_2}{\partial p}\right)_T 
+  &= \frac{u\rho}{p}\left[1-\left(\frac{\partial \ln n_g}{\partial \ln p}\right)_T\right] - \frac{\rho}{u}\left(\sum_{j=1}^{N_s}\frac{n_jh_{mol,j}}{p}\left(\frac{\partial \ln n_j}{\partial \ln p}\right)_T\right)
+  \end{split}
+\end{equation}
+
+参数均可求，迭代公式如(64)
+
+\subsubsection{喷管其他参数}
+计算得喷管某一截面的$T_x,p_x,n_{j,x}$后，燃烧室参数计算1-23仍适用
+
+1）从c到x的喷管平均等熵指数：（可以用此公式来试值确定（54）中的初值(仅出口截面)（不确定））
+\begin{equation}
+  \bar{\gamma} = \frac{\ln \left(\frac{p_x}{p_c}\right)}{\ln\left( \frac{p_x}{p_c} \frac{R_{m,c}T_c}{R_{m,x}T_x}\right)}
+\end{equation}
+
+2）某一截面处的速度
+\begin{equation}
+  u_x = \sqrt{2\left(h_c - \sum_{j=1}^{N_s}n_jh_{mol,j}\right)}
+\end{equation}
+马赫数：
+\begin{equation}
+  Ma_x = \frac{u_x}{a_{s,x}}
+\end{equation}
+
+\section{推力室性能计算}
+c:燃烧室  e:喷管出口  t:喷管喉部
+
+
+计算得均为理想参数，两种方法会有误差
+\subsection{基于热力计算}
+\subsubsection{出口喷气速度}
+
+\begin{equation}
+  u_e = \sqrt{2\left(h_c - h_e\right)}
+\end{equation}
+
+\subsubsection{推力室比冲}
+\begin{equation}
+  I_s = u_e + \frac{A_e}{\dot{m}}\left(p_e - p_a\right) = u_e + \frac{R_{m,e}T_e}{u_e}\left(1-\frac{p_a}{p_e}\right)
+\end{equation}
+
+\subsubsection{理想特征速度}
+\begin{equation}
+  c^* = \frac{p_cA_t}{\dot{m}} = \frac{p_cR_{m,t}T_t}{p_tu_t}
+\end{equation}
+
+\subsubsection{推力系数}
+\begin{equation}
+  C_F = \frac{F}{p_cA_t} = \frac{I_s}{c^*}
+\end{equation}
+
+
+
+\subsection{基于平均等熵指数}
+通过式（56）计算从c到e的平均等熵指数$\bar{\gamma}$
+
+注意以下公式中的截面选取，选用对应的平均等熵指数，（若平均等熵指数变化不大也可定为常值）
+
+\subsubsection{出口喷气速度}
+\begin{equation}
+  u_e = \sqrt{\frac{2\bar{\gamma}}{\bar{\gamma}-1}R_{m,c}T_c\left[1-\left(\frac{p_e}{p_c}\right)^{\frac{\bar{\gamma}-1}{\bar{\gamma}}}\right]}
+\end{equation}
+
+\subsubsection{平衡声速}
+与热力性质中的15.平衡声速区分，热力性质中以为燃烧室或喷管某一截面一处该地的性质参数计算平衡声速；这里以从c到x截面上的平均等熵指数计算每处的平衡声速
+
+\begin{equation}
+  a_s = \sqrt{\bar{\gamma}R_mT}
+\end{equation}
+
+\subsubsection{喉部临界压力比、密度比}
+\begin{equation}
+  \frac{p_t}{p_c} = \left(\frac{2}{\bar{\gamma} + 1}\right)^{\frac{\bar{\gamma}}{\bar{\gamma} -1}}
+\end{equation}
+
+\begin{equation}
+  \frac{\rho_t}{\rho_c} = \left(\frac{2}{\bar{\gamma} + 1}\right)^{\frac{1}{\bar{\gamma} -1}}
+\end{equation}
+
+\subsubsection{气动函数}
+已知平均等熵指数$\bar{\gamma}$与燃烧室总压总温，以拉瓦尔喷管（一维等熵流动）模型利用气体动力学中各气动函数求算各截面参数
+（已有上学期小程序）
+
+\subsubsection{质量流量}
+\begin{equation}
+  \dot{m} = \bar{\Gamma}\frac{p_cA_t}{\sqrt{R_{m,c}T_c}}
+\end{equation}
+
+\subsubsection{推力室比冲}
+\begin{equation}
+  I_s = u_e + \frac{A_e}{\dot{m}}\left(p_e - p_a\right) = \sqrt{\frac{2\left(\bar{\gamma} +1\right)}{\bar{\gamma}}R_{m,c}T_cZ\left(\lambda_e\right)} - \frac{p_a}{\rho_eu_e}
+\end{equation}
+
+\subsubsection{特征速度}
+\begin{equation}
+  c^* = \frac{p_cA_t}{\dot{m}} = \frac{\sqrt{R_{m,c}T_c}}{\bar{\Gamma}}
+\end{equation}
+
+\subsubsection{推力系数}
+\begin{equation}
+  C_F = \frac{F}{p_cA_t} = \frac{I_s}{c^*}
+\end{equation}
+
+
+
+\end{document}
