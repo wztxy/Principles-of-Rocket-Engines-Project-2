@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "application": "SLS_ThermoCalc",
+  "engineDefinition": {
+    "name": "RS-25 (SSME)",
+    "description": "Space Shuttle Main Engine - SLS Core Stage",
+    "thrust_kN": 2279,
+    "specificImpulse_vac_s": 452.3
+  },
+  "combustorConditions": {
+    "chamberPressure": {
+      "value": 20.64,
+      "units": "MPa"
+    },
+    "mixtureRatio": 6.0,
+    "initialEnthalpy_kJ_kg": -3920
+  },
+  "propellant": {
+    "type": "bipropellant",
+    "oxidizer": {
+      "name": "O2(L)",
+      "formula": "O2",
+      "massFraction": 1.0
+    },
+    "fuel": {
+      "name": "H2(L)",
+      "formula": "H2",
+      "massFraction": 1.0
+    }
+  },
+  "nozzleConditions": {
+    "exitPressure_atm": 0.001,
+    "areaRatio": 77.5,
+    "flowType": "equilibrium"
+  },
+  "thermodynamicModel": {
+    "method": "minimumGibbsFreeEnergy",
+    "coefficients": "NASA-9",
+    "temperatureRanges": [
+      {"min": 200, "max": 1000},
+      {"min": 1000, "max": 6000},
+      {"min": 6000, "max": 20000}
+    ]
+  },
+  "species": ["H", "H2", "H2O", "O", "O2", "OH"]
+}

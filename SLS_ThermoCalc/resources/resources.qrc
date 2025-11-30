@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/rocket.svg</file>
+        <file>icons/calculate.svg</file>
+        <file>icons/export.svg</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Document -->
+  <path d="M16 8H40L48 16V56H16V8Z" fill="#313244" stroke="#89b4fa" stroke-width="2"/>
+  <!-- Folded corner -->
+  <path d="M40 8V16H48" fill="#45475a" stroke="#89b4fa" stroke-width="2"/>
+  <!-- Lines on document -->
+  <line x1="22" y1="24" x2="42" y2="24" stroke="#6c7086" stroke-width="2"/>
+  <line x1="22" y1="32" x2="42" y2="32" stroke="#6c7086" stroke-width="2"/>
+  <line x1="22" y1="40" x2="36" y2="40" stroke="#6c7086" stroke-width="2"/>
+  <!-- Export arrow -->
+  <circle cx="44" cy="48" r="12" fill="#1e1e2e" stroke="#a6e3a1" stroke-width="2"/>
+  <path d="M44 42V54M44 42L40 46M44 42L48 46" stroke="#a6e3a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,740 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1280</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>SLS Rocket Engine Thermodynamic Calculator</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+/* 科技风格主题 - 深蓝色系 */
+QMainWindow {
+    background-color: #0a0f1a;
+}
+QGroupBox {
+    font-weight: bold;
+    font-size: 13px;
+    border: 1px solid #1e3a5f;
+    border-radius: 6px;
+    margin-top: 14px;
+    padding-top: 12px;
+    background-color: #0d1520;
+    color: #e0e6ed;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 8px;
+    color: #00b4d8;
+    font-weight: bold;
+}
+QLabel {
+    color: #b8c5d3;
+    font-size: 12px;
+}
+QLineEdit, QDoubleSpinBox, QSpinBox, QComboBox {
+    background-color: #0d1520;
+    border: 1px solid #1e3a5f;
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: #e0e6ed;
+    font-size: 12px;
+    selection-background-color: #00b4d8;
+}
+QLineEdit:focus, QDoubleSpinBox:focus, QSpinBox:focus, QComboBox:focus {
+    border: 1px solid #00b4d8;
+}
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #00b4d8;
+    margin-right: 6px;
+}
+QComboBox QAbstractItemView {
+    background-color: #0d1520;
+    border: 1px solid #1e3a5f;
+    selection-background-color: #1e3a5f;
+    color: #e0e6ed;
+}
+QPushButton {
+    background-color: #00b4d8;
+    color: #0a0f1a;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 24px;
+    font-weight: bold;
+    font-size: 13px;
+}
+QPushButton:hover {
+    background-color: #48cae4;
+}
+QPushButton:pressed {
+    background-color: #0096c7;
+}
+QPushButton:disabled {
+    background-color: #1e3a5f;
+    color: #5a6a7a;
+}
+QPushButton#btnClear {
+    background-color: #e63946;
+}
+QPushButton#btnClear:hover {
+    background-color: #f06c77;
+}
+QPushButton#btnExport {
+    background-color: #2a9d8f;
+}
+QPushButton#btnExport:hover {
+    background-color: #40b8a8;
+}
+QTableWidget {
+    background-color: #0d1520;
+    border: 1px solid #1e3a5f;
+    border-radius: 4px;
+    gridline-color: #1e3a5f;
+    color: #e0e6ed;
+    font-size: 12px;
+}
+QTableWidget::item {
+    padding: 6px;
+    border-bottom: 1px solid #1e3a5f;
+}
+QTableWidget::item:selected {
+    background-color: #1e3a5f;
+}
+QHeaderView::section {
+    background-color: #0d1520;
+    color: #00b4d8;
+    font-weight: bold;
+    padding: 8px;
+    border: none;
+    border-bottom: 2px solid #00b4d8;
+}
+QTextEdit {
+    background-color: #0d1520;
+    border: 1px solid #1e3a5f;
+    border-radius: 4px;
+    color: #90caf9;
+    font-family: "SF Mono", "Monaco", "Menlo", monospace;
+    font-size: 11px;
+}
+QStatusBar {
+    background-color: #0d1520;
+    color: #5a6a7a;
+    border-top: 1px solid #1e3a5f;
+}
+QMenuBar {
+    background-color: #0d1520;
+    color: #b8c5d3;
+    border-bottom: 1px solid #1e3a5f;
+    padding: 4px;
+}
+QMenuBar::item {
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+QMenuBar::item:selected {
+    background-color: #1e3a5f;
+}
+QMenu {
+    background-color: #0d1520;
+    color: #e0e6ed;
+    border: 1px solid #1e3a5f;
+    padding: 4px;
+}
+QMenu::item {
+    padding: 8px 24px;
+    border-radius: 4px;
+}
+QMenu::item:selected {
+    background-color: #1e3a5f;
+}
+QMenu::separator {
+    height: 1px;
+    background-color: #1e3a5f;
+    margin: 4px 8px;
+}
+QTabWidget::pane {
+    border: 1px solid #1e3a5f;
+    border-radius: 6px;
+    background-color: #0d1520;
+    padding: 4px;
+}
+QTabBar::tab {
+    background-color: #0d1520;
+    color: #5a6a7a;
+    padding: 10px 20px;
+    border: 1px solid #1e3a5f;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    margin-right: 2px;
+}
+QTabBar::tab:selected {
+    background-color: #1e3a5f;
+    color: #00b4d8;
+    border-bottom: 2px solid #00b4d8;
+}
+QTabBar::tab:hover:!selected {
+    background-color: #152030;
+}
+QScrollBar:vertical {
+    background-color: #0d1520;
+    width: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical {
+    background-color: #1e3a5f;
+    border-radius: 5px;
+    min-height: 30px;
+}
+QScrollBar::handle:vertical:hover {
+    background-color: #2e4a6f;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+   </string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="spacing">
+     <number>16</number>
+    </property>
+    <property name="leftMargin">
+     <number>16</number>
+    </property>
+    <property name="topMargin">
+     <number>12</number>
+    </property>
+    <property name="rightMargin">
+     <number>16</number>
+    </property>
+    <property name="bottomMargin">
+     <number>12</number>
+    </property>
+    <!-- 左侧输入面板 -->
+    <item>
+     <widget class="QFrame" name="inputPanel">
+      <property name="minimumWidth">
+       <number>360</number>
+      </property>
+      <property name="maximumWidth">
+       <number>400</number>
+      </property>
+      <layout class="QVBoxLayout" name="inputLayout">
+       <property name="spacing">
+        <number>12</number>
+       </property>
+       <!-- 发动机选择 -->
+       <item>
+        <widget class="QGroupBox" name="groupEngine">
+         <property name="title">
+          <string>Engine Selection</string>
+         </property>
+         <layout class="QVBoxLayout" name="engineLayout">
+          <item>
+           <widget class="QComboBox" name="comboEngine">
+            <property name="minimumHeight">
+             <number>32</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="lblEngineInfo">
+            <property name="text">
+             <string>Select preset engine or custom parameters</string>
+            </property>
+            <property name="styleSheet">
+             <string>color: #5a6a7a; font-style: italic; font-size: 11px;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- 推进剂参数 -->
+       <item>
+        <widget class="QGroupBox" name="groupPropellant">
+         <property name="title">
+          <string>Propellant Parameters</string>
+         </property>
+         <layout class="QGridLayout" name="propellantLayout">
+          <property name="verticalSpacing">
+           <number>8</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="lblMixtureRatio">
+            <property name="text">
+             <string>Mixture Ratio (O/F):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="spinMixtureRatio">
+            <property name="minimum">
+             <double>1.000000</double>
+            </property>
+            <property name="maximum">
+             <double>20.000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.100000</double>
+            </property>
+            <property name="value">
+             <double>6.000000</double>
+            </property>
+            <property name="decimals">
+             <number>2</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="lblOxidizer">
+            <property name="text">
+             <string>Oxidizer Mass Frac:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="editOxidizerFrac">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string>0.8571</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="lblFuel">
+            <property name="text">
+             <string>Fuel Mass Frac:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="editFuelFrac">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string>0.1429</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="lblInitialEnthalpy">
+            <property name="text">
+             <string>Initial Enthalpy (kJ/kg):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QDoubleSpinBox" name="spinInitialEnthalpy">
+            <property name="minimum">
+             <double>-10000.000000</double>
+            </property>
+            <property name="maximum">
+             <double>10000.000000</double>
+            </property>
+            <property name="value">
+             <double>-987.000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- 燃烧室参数 -->
+       <item>
+        <widget class="QGroupBox" name="groupChamber">
+         <property name="title">
+          <string>Chamber Parameters</string>
+         </property>
+         <layout class="QGridLayout" name="chamberLayout">
+          <property name="verticalSpacing">
+           <number>8</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="lblChamberPressure">
+            <property name="text">
+             <string>Chamber Pressure (MPa):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="spinChamberPressure">
+            <property name="minimum">
+             <double>0.100000</double>
+            </property>
+            <property name="maximum">
+             <double>50.000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.500000</double>
+            </property>
+            <property name="value">
+             <double>20.470000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="lblTmin">
+            <property name="text">
+             <string>Min Scan Temp (K):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="spinTmin">
+            <property name="minimum">
+             <double>500.000000</double>
+            </property>
+            <property name="maximum">
+             <double>3000.000000</double>
+            </property>
+            <property name="value">
+             <double>2500.000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="lblTmax">
+            <property name="text">
+             <string>Max Scan Temp (K):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QDoubleSpinBox" name="spinTmax">
+            <property name="minimum">
+             <double>1000.000000</double>
+            </property>
+            <property name="maximum">
+             <double>6000.000000</double>
+            </property>
+            <property name="value">
+             <double>4500.000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- 喷管参数 -->
+       <item>
+        <widget class="QGroupBox" name="groupNozzle">
+         <property name="title">
+          <string>Nozzle Parameters</string>
+         </property>
+         <layout class="QGridLayout" name="nozzleLayout">
+          <property name="verticalSpacing">
+           <number>8</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="lblExitPressure">
+            <property name="text">
+             <string>Exit Pressure (atm):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QDoubleSpinBox" name="spinExitPressure">
+            <property name="minimum">
+             <double>0.001000</double>
+            </property>
+            <property name="maximum">
+             <double>10.000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.010000</double>
+            </property>
+            <property name="value">
+             <double>0.050000</double>
+            </property>
+            <property name="decimals">
+             <number>4</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="lblAmbientPressure">
+            <property name="text">
+             <string>Ambient Pressure (atm):</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QDoubleSpinBox" name="spinAmbientPressure">
+            <property name="minimum">
+             <double>0.000000</double>
+            </property>
+            <property name="maximum">
+             <double>2.000000</double>
+            </property>
+            <property name="singleStep">
+             <double>0.010000</double>
+            </property>
+            <property name="value">
+             <double>0.000000</double>
+            </property>
+            <property name="decimals">
+             <number>4</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- 按钮区 -->
+       <item>
+        <layout class="QHBoxLayout" name="buttonLayout">
+         <item>
+          <widget class="QPushButton" name="btnCalculate">
+           <property name="text">
+            <string>CALCULATE</string>
+           </property>
+           <property name="minimumHeight">
+            <number>42</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="buttonLayout2">
+         <item>
+          <widget class="QPushButton" name="btnExport">
+           <property name="text">
+            <string>Export</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnClear">
+           <property name="text">
+            <string>Clear</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <!-- 弹性空间 -->
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <!-- 右侧结果面板 -->
+    <item>
+     <widget class="QTabWidget" name="tabResults">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <!-- 燃烧室结果 -->
+      <widget class="QWidget" name="tabChamber">
+       <attribute name="title">
+        <string>Chamber</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="chamberResultLayout">
+        <item>
+         <widget class="QTableWidget" name="tableChamber">
+          <property name="columnCount">
+           <number>2</number>
+          </property>
+          <property name="rowCount">
+           <number>12</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>Parameter</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Value</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <!-- 喷管结果 -->
+      <widget class="QWidget" name="tabNozzle">
+       <attribute name="title">
+        <string>Nozzle</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="nozzleResultLayout">
+        <item>
+         <widget class="QTableWidget" name="tableNozzle">
+          <property name="columnCount">
+           <number>2</number>
+          </property>
+          <property name="rowCount">
+           <number>8</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>Parameter</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Value</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <!-- 组分详情 -->
+      <widget class="QWidget" name="tabSpecies">
+       <attribute name="title">
+        <string>Species</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="speciesLayout">
+        <item>
+         <widget class="QTableWidget" name="tableSpecies">
+          <property name="columnCount">
+           <number>3</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>Species</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Chamber (mol)</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Exit (mol)</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <!-- 日志 -->
+      <widget class="QWidget" name="tabLog">
+       <attribute name="title">
+        <string>Log</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="logLayout">
+        <item>
+         <widget class="QTextEdit" name="textLog">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1280</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionImport"/>
+    <addaction name="actionExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionExportResults"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+    <addaction name="actionAboutQt"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionImport">
+   <property name="text">
+    <string>Import Preset...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export Preset...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionExportResults">
+   <property name="text">
+    <string>Export Results...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About...</string>
+   </property>
+  </action>
+  <action name="actionAboutQt">
+   <property name="text">
+    <string>About Qt...</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,4 @@
+# Hashes of file build rules.
+400ba4bf9ad189371fece9922aa8de3f CMakeFiles/SLS_ThermoCalc_autogen
+703ea0312f3852177cd165a31fc13030 SLS_ThermoCalc_autogen/3YJK5W5UP7/qrc_resources.cpp
+a312a8d74aa770e5095a507f153e8e0b SLS_ThermoCalc_autogen/timestamp

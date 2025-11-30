@@ -1,0 +1,579 @@
+#include "mainwindow.h"
+
+#include <QDateTime>
+#include <QFileDialog>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMessageBox>
+#include <QTextStream>
+#include <cmath>
+
+#include "ui_mainwindow.h"
+
+MainWindow::MainWindow(QWidget* parent)
+    : QMainWindow(parent), ui(new Ui::MainWindow), m_hasResult(false) {
+    ui->setupUi(this);
+
+    setupUI();
+    setupConnections();
+    setupEnginePresets();
+
+    setStatusMessage("就绪 - 选择发动机并设置参数后点击计算");
+}
+
+MainWindow::~MainWindow() { delete ui; }
+
+void MainWindow::setupUI() {
+    // 设置表格列宽
+    ui->tableChamber->setColumnWidth(0, 200);
+    ui->tableChamber->setColumnWidth(1, 200);
+    ui->tableChamber->horizontalHeader()->setStretchLastSection(true);
+
+    ui->tableNozzle->setColumnWidth(0, 200);
+    ui->tableNozzle->setColumnWidth(1, 200);
+    ui->tableNozzle->horizontalHeader()->setStretchLastSection(true);
+
+    ui->tableSpecies->setColumnWidth(0, 100);
+    ui->tableSpecies->setColumnWidth(1, 150);
+    ui->tableSpecies->setColumnWidth(2, 150);
+    ui->tableSpecies->horizontalHeader()->setStretchLastSection(true);
+
+    // 初始化燃烧室结果表
+    QStringList chamberParams = {"燃烧温度 (K)",
+                                 "总焓 (kJ/kg)",
+                                 "总熵 (kJ/(kg·K))",
+                                 "平均分子量 (g/mol)",
+                                 "密度 (kg/m³)",
+                                 "定压比热 Cp (kJ/(kg·K))",
+                                 "定容比热 Cv (kJ/(kg·K))",
+                                 "比热比 γ",
+                                 "等熵指数 γs",
+                                 "声速 (m/s)",
+                                 "特征速度 c* (m/s)",
+                                 "收敛状态"};
+
+    ui->tableChamber->setRowCount(chamberParams.size());
+    for (int i = 0; i < chamberParams.size(); ++i) {
+        ui->tableChamber->setItem(i, 0, new QTableWidgetItem(chamberParams[i]));
+        ui->tableChamber->setItem(i, 1, new QTableWidgetItem("-"));
+    }
+
+    // 初始化喷管结果表
+    QStringList nozzleParams = {"出口温度 (K)", "出口压强 (atm)", "出口速度 (m/s)", "比冲 Isp (s)",
+                                "马赫数",       "推力系数 Cf",    "面积比 ε",       "收敛状态"};
+
+    ui->tableNozzle->setRowCount(nozzleParams.size());
+    for (int i = 0; i < nozzleParams.size(); ++i) {
+        ui->tableNozzle->setItem(i, 0, new QTableWidgetItem(nozzleParams[i]));
+        ui->tableNozzle->setItem(i, 1, new QTableWidgetItem("-"));
+    }
+
+    // 初始化组分表
+    QStringList speciesNames = {"H", "H₂", "H₂O", "O", "O₂", "OH"};
+    ui->tableSpecies->setRowCount(speciesNames.size());
+    for (int i = 0; i < speciesNames.size(); ++i) {
+        ui->tableSpecies->setItem(i, 0, new QTableWidgetItem(speciesNames[i]));
+        ui->tableSpecies->setItem(i, 1, new QTableWidgetItem("-"));
+        ui->tableSpecies->setItem(i, 2, new QTableWidgetItem("-"));
+    }
+
+    // 日志初始化
+    ui->textLog->append("========================================");
+    ui->textLog->append("  SLS火箭发动机热力计算系统");
+    ui->textLog->append("  基于最小吉布斯自由能法");
+    ui->textLog->append("========================================");
+    ui->textLog->append("");
+}
+
+void MainWindow::setupConnections() {
+    connect(ui->comboEngine, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &MainWindow::onEngineChanged);
+    connect(ui->btnCalculate, &QPushButton::clicked, this, &MainWindow::onCalculate);
+    connect(ui->btnExport, &QPushButton::clicked, this, &MainWindow::onExportResults);
+    connect(ui->btnClear, &QPushButton::clicked, this, &MainWindow::onClearResults);
+    connect(ui->spinMixtureRatio, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+            &MainWindow::onMixtureRatioChanged);
+    
+    // 菜单操作
+    connect(ui->actionImport, &QAction::triggered, this, &MainWindow::onImportPreset);
+    connect(ui->actionExport, &QAction::triggered, this, &MainWindow::onExportPreset);
+    connect(ui->actionExportResults, &QAction::triggered, this, &MainWindow::onExportResults);
+    connect(ui->actionExit, &QAction::triggered, this, &QMainWindow::close);
+    connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onAbout);
+    connect(ui->actionAboutQt, &QAction::triggered, this, &MainWindow::onAboutQt);
+}
+
+void MainWindow::setupEnginePresets() {
+    ui->comboEngine->addItem("RS-25 (SSME) - SLS核心级", ENGINE_RS25);
+    ui->comboEngine->addItem("RL-10B2 - 上面级", ENGINE_RL10);
+    ui->comboEngine->addItem("J-2X - 探索上面级", ENGINE_J2X);
+    ui->comboEngine->addItem("自定义参数", ENGINE_CUSTOM);
+
+    // 默认选择RS-25
+    onEngineChanged(0);
+}
+
+void MainWindow::onEngineChanged(int index) {
+    EngineType type = static_cast<EngineType>(ui->comboEngine->itemData(index).toInt());
+    const EnginePreset* preset = get_engine_preset(type);
+
+    if (preset) {
+        // 更新界面参数
+        ui->spinMixtureRatio->setValue(preset->mixture_ratio);
+        ui->spinChamberPressure->setValue(preset->chamber_pressure);
+
+        // 更新发动机信息
+        QString info = QString("%1\n推力: %2 kN, 真空比冲: %3 s")
+                           .arg(QString::fromUtf8(preset->description))
+                           .arg(preset->thrust, 0, 'f', 1)
+                           .arg(preset->specific_impulse_vac, 0, 'f', 1);
+        ui->lblEngineInfo->setText(info);
+
+        // 复制配置
+        m_currentConfig = preset->config;
+
+        // 更新质量分数显示
+        onMixtureRatioChanged(preset->mixture_ratio);
+
+        // 记录日志
+        ui->textLog->append(QString("[%1] 选择发动机: %2")
+                                .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
+                                .arg(QString::fromUtf8(preset->name)));
+    }
+}
+
+void MainWindow::onMixtureRatioChanged(double value) {
+    double ox_frac = value / (1.0 + value);
+    double fuel_frac = 1.0 / (1.0 + value);
+
+    ui->editOxidizerFrac->setText(formatNumber(ox_frac));
+    ui->editFuelFrac->setText(formatNumber(fuel_frac));
+
+    // 更新配置
+    m_currentConfig.mass_fraction[0] = fuel_frac;  // H2
+    m_currentConfig.mass_fraction[1] = ox_frac;    // O2
+}
+
+void MainWindow::readInputParameters() {
+    // 燃烧室压强 (MPa -> atm)
+    double pc_mpa = ui->spinChamberPressure->value();
+    m_currentConfig.chamber_pressure = pc_mpa / 0.101325;  // 1 atm = 0.101325 MPa
+
+    // 初始焓 (kJ/kg -> J/kg)
+    m_currentConfig.initial_enthalpy = ui->spinInitialEnthalpy->value() * 1000.0;
+}
+
+void MainWindow::onCalculate() {
+    setStatusMessage("正在计算...");
+    ui->btnCalculate->setEnabled(false);
+
+    // 读取参数
+    readInputParameters();
+
+    // 记录开始
+    ui->textLog->append("");
+    ui->textLog->append(QString("[%1] ========== 开始计算 ==========")
+                            .arg(QDateTime::currentDateTime().toString("hh:mm:ss")));
+    ui->textLog->append(QString("  燃烧室压强: %1 MPa (%2 atm)")
+                            .arg(ui->spinChamberPressure->value(), 0, 'f', 2)
+                            .arg(m_currentConfig.chamber_pressure, 0, 'f', 1));
+    ui->textLog->append(QString("  混合比 O/F: %1").arg(ui->spinMixtureRatio->value(), 0, 'f', 2));
+
+    // 执行计算
+    double exit_pressure = ui->spinExitPressure->value();
+    int ret = thermo_calculate(&m_currentConfig, exit_pressure, &m_lastResult);
+
+    if (ret == 0 && m_lastResult.success) {
+        m_hasResult = true;
+        displayResults(m_lastResult);
+        setStatusMessage("计算完成");
+
+        ui->textLog->append(
+            QString("  ✓ 燃烧温度: %1 K").arg(m_lastResult.chamber.temperature, 0, 'f', 1));
+        ui->textLog->append(
+            QString("  ✓ 比冲: %1 s").arg(m_lastResult.nozzle.specific_impulse, 0, 'f', 1));
+        ui->textLog->append("[计算成功]");
+    } else {
+        m_hasResult = false;
+        QString errMsg = QString::fromUtf8(m_lastResult.error_msg);
+        if (errMsg.isEmpty())
+            errMsg = "未知错误";
+
+        setStatusMessage("计算失败: " + errMsg, true);
+        ui->textLog->append(QString("  ✗ 错误: %1").arg(errMsg));
+
+        QMessageBox::warning(this, "计算失败", errMsg);
+    }
+
+    ui->btnCalculate->setEnabled(true);
+}
+
+void MainWindow::displayResults(const ThermoResult& result) {
+    displayChamberResults(result.chamber);
+    displayNozzleResults(result.nozzle);
+
+    // 更新组分表
+    QStringList speciesNames = {"H", "H₂", "H₂O", "O", "O₂", "OH"};
+    int numSpecies = qMin(m_currentConfig.num_species, 6);
+
+    for (int i = 0; i < numSpecies; ++i) {
+        ui->tableSpecies->item(i, 1)->setText(formatNumber(result.chamber.mole_fractions[i], 6));
+        ui->tableSpecies->item(i, 2)->setText(formatNumber(result.nozzle.mole_fractions[i], 6));
+    }
+}
+
+void MainWindow::displayChamberResults(const ChamberResult& chamber) {
+    int row = 0;
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.temperature, 2));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.total_enthalpy / 1000.0, 2));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.total_entropy / 1000.0, 4));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.mean_molecular_weight, 3));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.density, 3));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.cp / 1000.0, 4));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.cv / 1000.0, 4));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.gamma, 4));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.gamma_s, 4));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.sound_speed, 1));
+    ui->tableChamber->item(row++, 1)->setText(formatNumber(chamber.char_velocity, 1));
+    ui->tableChamber->item(row++, 1)->setText(chamber.converged ? "✓ 收敛" : "✗ 未收敛");
+}
+
+void MainWindow::displayNozzleResults(const NozzleResult& nozzle) {
+    int row = 0;
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_temperature, 2));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_pressure, 4));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.exit_velocity, 1));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.specific_impulse, 1));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.mach_number, 2));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.thrust_coefficient, 4));
+    ui->tableNozzle->item(row++, 1)->setText(formatNumber(nozzle.area_ratio, 2));
+    ui->tableNozzle->item(row++, 1)->setText(nozzle.converged ? "✓ 收敛" : "✗ 未收敛");
+}
+
+void MainWindow::onExportResults() {
+    if (!m_hasResult) {
+        QMessageBox::information(this, "提示", "请先进行计算");
+        return;
+    }
+
+    QString filename = QFileDialog::getSaveFileName(this, "导出结果", "结果.txt",
+                                                    "文本文件 (*.txt);;CSV文件 (*.csv)");
+    if (filename.isEmpty())
+        return;
+
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "错误", "无法创建文件");
+        return;
+    }
+
+    QTextStream out(&file);
+
+    out << "========================================";
+    out << "SLS火箭发动机热力计算结果\n";
+    out << "计算时间: " << QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss") << "\n";
+    out << "========================================\n\n";
+
+    out << "【输入参数】\n";
+    out << QString("发动机: %1\n").arg(ui->comboEngine->currentText());
+    out << QString("混合比 O/F: %1\n").arg(ui->spinMixtureRatio->value());
+    out << QString("燃烧室压强: %1 MPa\n").arg(ui->spinChamberPressure->value());
+    out << QString("喷管出口压强: %1 atm\n\n").arg(ui->spinExitPressure->value());
+
+    out << "【燃烧室结果】\n";
+    out << QString("燃烧温度: %1 K\n").arg(m_lastResult.chamber.temperature, 0, 'f', 2);
+    out << QString("比热比 γ: %1\n").arg(m_lastResult.chamber.gamma, 0, 'f', 4);
+    out << QString("等熵指数 γs: %1\n").arg(m_lastResult.chamber.gamma_s, 0, 'f', 4);
+    out << QString("特征速度 c*: %1 m/s\n\n").arg(m_lastResult.chamber.char_velocity, 0, 'f', 1);
+
+    out << "【喷管结果】\n";
+    out << QString("出口温度: %1 K\n").arg(m_lastResult.nozzle.exit_temperature, 0, 'f', 2);
+    out << QString("出口速度: %1 m/s\n").arg(m_lastResult.nozzle.exit_velocity, 0, 'f', 1);
+    out << QString("比冲 Isp: %1 s\n").arg(m_lastResult.nozzle.specific_impulse, 0, 'f', 1);
+
+    file.close();
+
+    setStatusMessage(QString("结果已导出到 %1").arg(filename));
+    ui->textLog->append(QString("[%1] 结果已导出: %2")
+                            .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
+                            .arg(filename));
+}
+
+void MainWindow::onClearResults() {
+    m_hasResult = false;
+
+    // 清空表格
+    for (int i = 0; i < ui->tableChamber->rowCount(); ++i) {
+        ui->tableChamber->item(i, 1)->setText("-");
+    }
+    for (int i = 0; i < ui->tableNozzle->rowCount(); ++i) {
+        ui->tableNozzle->item(i, 1)->setText("-");
+    }
+    for (int i = 0; i < ui->tableSpecies->rowCount(); ++i) {
+        ui->tableSpecies->item(i, 1)->setText("-");
+        ui->tableSpecies->item(i, 2)->setText("-");
+    }
+
+    setStatusMessage("结果已清空");
+}
+
+void MainWindow::onAbout() {
+    QMessageBox::about(this, "关于",
+                       "<h2>SLS火箭发动机热力计算系统</h2>"
+                       "<p>版本 1.0</p>"
+                       "<p>基于最小吉布斯自由能法实现燃烧室和喷管热力计算</p>"
+                       "<p></p>"
+                       "<p><b>主要功能:</b></p>"
+                       "<ul>"
+                       "<li>燃烧室平衡组分计算</li>"
+                       "<li>燃烧温度确定</li>"
+                       "<li>喷管等熵膨胀计算</li>"
+                       "<li>热力性能参数输出</li>"
+                       "</ul>"
+                       "<p></p>"
+                       "<p>火箭发动机原理课程大作业2</p>");
+}
+
+QString MainWindow::formatNumber(double value, int precision) {
+    if (std::isnan(value) || std::isinf(value)) {
+        return "-";
+    }
+    return QString::number(value, 'f', precision);
+}
+
+void MainWindow::setStatusMessage(const QString& msg, bool isError) {
+    if (isError) {
+        ui->statusbar->setStyleSheet("color: #f38ba8;");
+    } else {
+        ui->statusbar->setStyleSheet("color: #a6e3a1;");
+    }
+    ui->statusbar->showMessage(msg);
+}
+
+void MainWindow::onAboutQt() {
+    QMessageBox::aboutQt(this, "关于 Qt");
+}
+
+void MainWindow::onImportPreset() {
+    // 默认打开 presets 文件夹
+    QString defaultDir = QCoreApplication::applicationDirPath() + "/../../../presets";
+    QDir dir(defaultDir);
+    if (!dir.exists())
+        defaultDir = "";
+    
+    QString filename = QFileDialog::getOpenFileName(
+        this, "导入预设配置", defaultDir,
+        "JSON配置文件 (*.json);;所有文件 (*)");
+    
+    if (filename.isEmpty())
+        return;
+    
+    if (loadPresetFromJson(filename)) {
+        setStatusMessage(QString("已导入预设: %1").arg(filename));
+        ui->textLog->append(QString("[%1] 导入预设: %2")
+                               .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
+                               .arg(filename));
+    } else {
+        QMessageBox::warning(this, "导入失败", "无法解析配置文件");
+    }
+}
+
+void MainWindow::onExportPreset() {
+    QString filename = QFileDialog::getSaveFileName(
+        this, "导出预设配置", "engine_preset.json",
+        "JSON配置文件 (*.json)");
+    
+    if (filename.isEmpty())
+        return;
+    
+    if (savePresetToJson(filename)) {
+        setStatusMessage(QString("已导出预设: %1").arg(filename));
+        ui->textLog->append(QString("[%1] 导出预设: %2")
+                               .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
+                               .arg(filename));
+    } else {
+        QMessageBox::warning(this, "导出失败", "无法保存配置文件");
+    }
+}
+
+bool MainWindow::savePresetToJson(const QString& filename) {
+    QJsonObject root;
+    
+    // 版本和应用信息
+    root["version"] = 1;
+    root["application"] = "SLS_ThermoCalc";
+    
+    // 发动机信息
+    QJsonObject engineDef;
+    engineDef["name"] = ui->comboEngine->currentText();
+    engineDef["description"] = "SLS ThermoCalc Preset";
+    engineDef["thrust_kN"] = 0;
+    engineDef["specificImpulse_vac_s"] = m_hasResult ? m_lastResult.nozzle.specific_impulse : 0;
+    root["engineDefinition"] = engineDef;
+    
+    // 燃烧室条件 (RPA风格)
+    QJsonObject combustor;
+    QJsonObject chamberPressure;
+    chamberPressure["value"] = ui->spinChamberPressure->value();
+    chamberPressure["units"] = "MPa";
+    combustor["chamberPressure"] = chamberPressure;
+    combustor["mixtureRatio"] = ui->spinMixtureRatio->value();
+    combustor["initialEnthalpy_kJ_kg"] = ui->spinInitialEnthalpy->value();
+    root["combustorConditions"] = combustor;
+    
+    // 推进剂配置
+    QJsonObject propellant;
+    propellant["type"] = "bipropellant";
+    QJsonObject oxidizer;
+    oxidizer["name"] = "O2(L)";
+    oxidizer["formula"] = "O2";
+    oxidizer["massFraction"] = 1.0;
+    propellant["oxidizer"] = oxidizer;
+    QJsonObject fuel;
+    fuel["name"] = "H2(L)";
+    fuel["formula"] = "H2";
+    fuel["massFraction"] = 1.0;
+    propellant["fuel"] = fuel;
+    root["propellant"] = propellant;
+    
+    // 喷管条件
+    QJsonObject nozzle;
+    nozzle["exitPressure_atm"] = ui->spinExitPressure->value();
+    nozzle["flowType"] = "equilibrium";
+    root["nozzleConditions"] = nozzle;
+    
+    // 热力学模型
+    QJsonObject thermoModel;
+    thermoModel["method"] = "minimumGibbsFreeEnergy";
+    thermoModel["coefficients"] = "NASA-9";
+    root["thermodynamicModel"] = thermoModel;
+    
+    // 物种列表
+    QJsonArray species;
+    species.append("H");
+    species.append("H2");
+    species.append("H2O");
+    species.append("O");
+    species.append("O2");
+    species.append("OH");
+    root["species"] = species;
+    
+    // 计算结果（如果有）
+    if (m_hasResult) {
+        QJsonObject results;
+        
+        QJsonObject chamber;
+        chamber["temperature_K"] = m_lastResult.chamber.temperature;
+        chamber["gamma"] = m_lastResult.chamber.gamma;
+        chamber["gamma_s"] = m_lastResult.chamber.gamma_s;
+        chamber["charVelocity_m_s"] = m_lastResult.chamber.char_velocity;
+        chamber["soundSpeed_m_s"] = m_lastResult.chamber.sound_speed;
+        chamber["meanMolWeight_g_mol"] = m_lastResult.chamber.mean_molecular_weight;
+        results["chamber"] = chamber;
+        
+        QJsonObject nozzleResult;
+        nozzleResult["exitTemperature_K"] = m_lastResult.nozzle.exit_temperature;
+        nozzleResult["exitVelocity_m_s"] = m_lastResult.nozzle.exit_velocity;
+        nozzleResult["specificImpulse_s"] = m_lastResult.nozzle.specific_impulse;
+        nozzleResult["machNumber"] = m_lastResult.nozzle.mach_number;
+        nozzleResult["thrustCoefficient"] = m_lastResult.nozzle.thrust_coefficient;
+        nozzleResult["areaRatio"] = m_lastResult.nozzle.area_ratio;
+        results["nozzle"] = nozzleResult;
+        
+        // 组分
+        QJsonArray speciesFractions;
+        QStringList speciesNames = {"H", "H2", "H2O", "O", "O2", "OH"};
+        for (int i = 0; i < m_currentConfig.num_species && i < 6; ++i) {
+            QJsonObject sp;
+            sp["name"] = speciesNames[i];
+            sp["moleFraction_chamber"] = m_lastResult.chamber.mole_fractions[i];
+            sp["moleFraction_nozzle"] = m_lastResult.nozzle.mole_fractions[i];
+            speciesFractions.append(sp);
+        }
+        results["speciesFractions"] = speciesFractions;
+        
+        root["calculationResults"] = results;
+    }
+    
+    // 写入文件
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
+    
+    QJsonDocument doc(root);
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+    
+    return true;
+}
+
+bool MainWindow::loadPresetFromJson(const QString& filename) {
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+    
+    QByteArray data = file.readAll();
+    file.close();
+    
+    QJsonParseError parseError;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+    if (parseError.error != QJsonParseError::NoError)
+        return false;
+    
+    QJsonObject root = doc.object();
+    QString engineName;
+    
+    // 读取发动机定义
+    if (root.contains("engineDefinition")) {
+        QJsonObject engineDef = root["engineDefinition"].toObject();
+        if (engineDef.contains("name"))
+            engineName = engineDef["name"].toString();
+    }
+    
+    // 读取燃烧室条件 (支持两种格式)
+    if (root.contains("combustorConditions")) {
+        QJsonObject combustor = root["combustorConditions"].toObject();
+        
+        // 新格式: chamberPressure 是对象
+        if (combustor.contains("chamberPressure")) {
+            QJsonValue cpVal = combustor["chamberPressure"];
+            if (cpVal.isObject()) {
+                QJsonObject cpObj = cpVal.toObject();
+                double pressure = cpObj["value"].toDouble();
+                QString units = cpObj["units"].toString("MPa");
+                if (units == "MPa")
+                    ui->spinChamberPressure->setValue(pressure);
+                else if (units == "atm")
+                    ui->spinChamberPressure->setValue(pressure * 0.101325);
+            } else {
+                ui->spinChamberPressure->setValue(cpVal.toDouble());
+            }
+        }
+        // 旧格式兼容
+        if (combustor.contains("chamberPressure_MPa"))
+            ui->spinChamberPressure->setValue(combustor["chamberPressure_MPa"].toDouble());
+        
+        if (combustor.contains("mixtureRatio"))
+            ui->spinMixtureRatio->setValue(combustor["mixtureRatio"].toDouble());
+        
+        if (combustor.contains("initialEnthalpy_kJ_kg"))
+            ui->spinInitialEnthalpy->setValue(combustor["initialEnthalpy_kJ_kg"].toDouble());
+    }
+    
+    // 读取喷管条件
+    if (root.contains("nozzleConditions")) {
+        QJsonObject nozzle = root["nozzleConditions"].toObject();
+        
+        if (nozzle.contains("exitPressure_atm"))
+            ui->spinExitPressure->setValue(nozzle["exitPressure_atm"].toDouble());
+    }
+    
+    // 设置为自定义引擎模式并更新信息
+    ui->comboEngine->setCurrentIndex(ui->comboEngine->count() - 1);
+    if (!engineName.isEmpty()) {
+        ui->lblEngineInfo->setText(QString("已导入: %1").arg(engineName));
+    }
+    
+    return true;
+}

@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "application": "SLS_ThermoCalc",
+  "engineDefinition": {
+    "name": "Custom Engine",
+    "description": "User-defined configuration template",
+    "thrust_kN": 0,
+    "specificImpulse_vac_s": 0
+  },
+  "combustorConditions": {
+    "chamberPressure": {
+      "value": 10.0,
+      "units": "MPa"
+    },
+    "mixtureRatio": 6.0,
+    "initialEnthalpy_kJ_kg": -3920
+  },
+  "propellant": {
+    "type": "bipropellant",
+    "oxidizer": {
+      "name": "O2(L)",
+      "formula": "O2",
+      "massFraction": 1.0
+    },
+    "fuel": {
+      "name": "H2(L)",
+      "formula": "H2",
+      "massFraction": 1.0
+    }
+  },
+  "nozzleConditions": {
+    "exitPressure_atm": 0.01,
+    "areaRatio": 50,
+    "flowType": "equilibrium"
+  },
+  "thermodynamicModel": {
+    "method": "minimumGibbsFreeEnergy",
+    "coefficients": "NASA-9",
+    "temperatureRanges": [
+      {"min": 200, "max": 1000},
+      {"min": 1000, "max": 6000},
+      {"min": 6000, "max": 20000}
+    ]
+  },
+  "species": ["H", "H2", "H2O", "O", "O2", "OH"],
+  "_comments": {
+    "chamberPressure": "Combustion chamber pressure in MPa",
+    "mixtureRatio": "Oxidizer to fuel mass ratio (O/F)",
+    "initialEnthalpy": "Propellant initial enthalpy in kJ/kg (negative for cryogenic)",
+    "exitPressure": "Nozzle exit pressure in atm",
+    "flowType": "equilibrium or frozen"
+  }
+}
