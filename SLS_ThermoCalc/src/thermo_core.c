@@ -523,9 +523,12 @@ void calc_thermo_properties(const PropellantInput* input,
     /* 平衡声速 (公式34) */
     result->sound_speed = sqrt(result->gamma_s * ng * R_UNIVERSAL * T);
     
-    /* 特征速度 (公式47-48) */
-    double Gamma = sqrt(result->gamma_s * pow(2.0 / (result->gamma_s + 1.0), 
-                        (result->gamma_s + 1.0) / (result->gamma_s - 1.0)));
+    /* 特征速度 (公式48-49) */
+    /* Γ = sqrt(γ × (2/(γ+1))^((γ+1)/(γ-1))) */
+    double gamma_s = result->gamma_s;
+    double Gamma = sqrt(gamma_s * pow(2.0 / (gamma_s + 1.0), 
+                        (gamma_s + 1.0) / (gamma_s - 1.0)));
+    /* c* = sqrt(T × R_0 / M_wm) / Γ */
     result->char_velocity = sqrt(T * R_UNIVERSAL / (result->mean_molecular_weight / 1000.0)) / Gamma;
     
     /* ============ 输运性质计算 (公式41-46) ============ */
@@ -577,33 +580,63 @@ void calc_thermo_properties(const PropellantInput* input,
     }
     result->viscosity = mu_mix;
     
-    /* 导热系数 (公式45-46) */
+    /* 导热系数 (公式45) */
+    /* LaTeX原公式: λ_j = 10² × 4.4184 × (10μ_j)/(10³M_wj) × (1.32×c_pmol,j/4.184 + 0.45×R_0/4.184) */
+    /* 简化: λ_j = μ_j/M_wj × (1.32×c_pmol,j + 0.45×R_0) */
+    /* 
+     * 单位分析:
+     * - μ_j [Pa·s] = [kg/(m·s)]
+     * - M_wj [g/mol] → 如果用g/mol，结果需要除以1000
+     * - 或者 M_wj [kg/mol] → 直接得到正确单位
+     * - c_pmol,j [J/(mol·K)]
+     * - R_0 [J/(mol·K)]
+     * 
+     * 使用 kg/mol:
+     * [Pa·s/(kg/mol)] × [J/(mol·K)] = [mol·kg/(m·s·kg)] × [J/(mol·K)]
+     *   = [1/(m·s)] × [J/K] = [J/(m·s·K)] = [W/(m·K)] ✓
+     */
     double lambda_i[MAX_SPECIES];
     for (i = L; i < N; i++) {
-        double M_w = M_i[i] * 1000.0;
-        double cp_i = calc_cp(&input->nasa9[i], T);
-        /* Eucken 修正公式 */
-        lambda_i[i] = mu_i[i] * (1.32 * cp_i / M_w + 0.45 * R_UNIVERSAL / M_w) * 100.0;
+        double M_w_kg = M_i[i];  /* kg/mol */
+        double cp_mol = calc_cp(&input->nasa9[i], T);  /* J/(mol·K) */
+        
+        /* 按LaTeX公式45计算，使用kg/mol作为分子量单位 */
+        /* λ = μ/M_w × (1.32×Cp + 0.45×R) */
+        lambda_i[i] = (mu_i[i] / M_w_kg) * (1.32 * cp_mol + 0.45 * R_UNIVERSAL);
     }
     
-    /* 混合导热系数 */
+    /* 混合导热系数 (公式46) */
+    /* λ = Σ(λ_i / (1 + 1.065 × Σ_{j≠i}(χ_j/χ_i × φ_ij))) */
     double lambda_mix = 0.0;
     for (i = L; i < N; i++) {
+        if (chi_i[i] < 1e-10) continue;  /* 跳过摩尔分数太小的组分 */
+        
         double sum_term = 0.0;
         for (j = L; j < N; j++) {
-            if (j != i && chi_i[i] > MIN_MOLE_FRAC) {
-                double M_wi = M_i[i] * 1000.0;
-                double M_wj = M_i[j] * 1000.0;
-                double phi_ij = (1.0 / sqrt(8.0)) * pow(1.0 + M_wi / M_wj, -0.5) *
-                               pow(1.0 + sqrt(mu_i[i] / mu_i[j]) * pow(M_wj / M_wi, 0.25), 2.0);
-                sum_term += 1.065 * chi_i[j] / chi_i[i] * phi_ij;
-            }
+            if (j == i) continue;  /* j ≠ i */
+            if (chi_i[j] < 1e-10) continue;
+            
+            double M_wi = M_i[i] * 1000.0;
+            double M_wj = M_i[j] * 1000.0;
+            /* Wilke 相互作用参数 φ_ij (公式43) */
+            double phi_ij = (1.0 / sqrt(8.0)) * pow(1.0 + M_wi / M_wj, -0.5) *
+                           pow(1.0 + sqrt(mu_i[i] / mu_i[j]) * pow(M_wj / M_wi, 0.25), 2.0);
+            sum_term += 1.065 * chi_i[j] / chi_i[i] * phi_ij;
         }
         lambda_mix += lambda_i[i] / (1.0 + sum_term);
     }
     result->conductivity = lambda_mix;
     
-    /* 普朗特数 (公式47) */
+    /* 普朗特数 (公式47): Pr = μ × c_p / λ */
+    /* 
+     * 单位分析:
+     * - μ [Pa·s] = [kg/(m·s)]
+     * - c_p [J/(kg·K)] = [m²/(s²·K)] (按公式35，n_j是每kg推进剂的摩尔数)
+     * - λ [W/(m·K)] = [kg·m/(s³·K)]
+     * 
+     * Pr = [kg/(m·s)] × [m²/(s²·K)] / [kg·m/(s³·K)]
+     *    = [kg·m/(s³·K)] / [kg·m/(s³·K)] = 1 (无量纲) ✓
+     */
     if (result->conductivity > 0) {
         result->prandtl = result->viscosity * result->cp / result->conductivity;
     } else {
@@ -638,22 +671,24 @@ void calc_partial_derivatives_T(const PropellantInput* input,
     memset(B_vec, 0, sizeof(B_vec));
     
     /* 构造方程组（参考公式28） */
-    /* 凝相方程 */
+    /* 凝相方程: B[i] = h_mol,j^⊖ / (R_0 * T) */
     for (i = 0; i < L; i++) {
         for (j = N; j < N + M; j++) {
             A_mat[i][j] = -input->Aij[j - N][i];
         }
-        B_vec[i] = calc_enthalpy(&input->nasa9[i], T_REF) / (R_UNIVERSAL * T);
+        /* 使用当前温度T计算焓，而非参考温度 */
+        B_vec[i] = calc_enthalpy(&input->nasa9[i], T) / (R_UNIVERSAL * T);
     }
     
-    /* 气相方程 */
+    /* 气相方程: B[i] = h_mol,j^⊖ / (R_0 * T) */
     for (i = L; i < N; i++) {
         A_mat[i][i] = 1.0;
         for (j = N; j < N + M; j++) {
             A_mat[i][j] = -input->Aij[j - N][i];
         }
         A_mat[i][N + M] = -1.0;
-        B_vec[i] = calc_enthalpy(&input->nasa9[i], T_REF) / (R_UNIVERSAL * T);
+        /* 使用当前温度T计算焓，而非参考温度 */
+        B_vec[i] = calc_enthalpy(&input->nasa9[i], T) / (R_UNIVERSAL * T);
     }
     
     /* 元素守恒方程 */
@@ -971,9 +1006,10 @@ int nozzle_calc_from_pressure(const PropellantInput* input,
     /* ============ 推力系数 (公式83-84) ============ */
     
     /* 质量流系数 Γ (公式48) */
-    double Gamma = sqrt(chamber->gamma_s) * 
-                   pow(2.0 / (chamber->gamma_s + 1.0), 
-                       (chamber->gamma_s + 1.0) / (2.0 * (chamber->gamma_s - 1.0)));
+    /* Γ = √(γ × (2/(γ+1))^((γ+1)/(γ-1))) */
+    /* 注: 这里的Gamma用于质量流量，与特征速度的Gamma相同 */
+    double Gamma = sqrt(chamber->gamma_s * pow(2.0 / (chamber->gamma_s + 1.0), 
+                       (chamber->gamma_s + 1.0) / (chamber->gamma_s - 1.0)));
     result->mass_flow_coefficient = Gamma;
     
     /* 推力系数 (公式84) */
@@ -1077,9 +1113,9 @@ int nozzle_calc_from_temperature(const PropellantInput* input,
     
     /* 推力系数和真空比冲 */
     double gamma = chamber->gamma_s;
-    double Gamma = sqrt(gamma) * 
-                   pow(2.0 / (gamma + 1.0), 
-                       (gamma + 1.0) / (2.0 * (gamma - 1.0)));
+    /* Γ = √(γ × (2/(γ+1))^((γ+1)/(γ-1))) */
+    double Gamma = sqrt(gamma * pow(2.0 / (gamma + 1.0), 
+                       (gamma + 1.0) / (gamma - 1.0)));
     result->mass_flow_coefficient = Gamma;
     
     double pe_pc = 1.0 / result->pressure_ratio;

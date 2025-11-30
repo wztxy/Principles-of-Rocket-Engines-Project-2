@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include <QTextStream>
 #include <cmath>
 
@@ -150,18 +151,33 @@ void MainWindow::setupEnginePresets() {
 QStringList MainWindow::getPresetsFolderPaths() {
     QStringList paths;
     
-    // 可能的预设文件夹路径
     QString appDir = QCoreApplication::applicationDirPath();
     
-    // macOS: app在 bin/SLS_ThermoCalc.app/Contents/MacOS 中
-    // 需要向上4级到 SLS_ThermoCalc，然后找 presets
-    paths << appDir + "/../../../../presets";  // bin/xxx.app/Contents/MacOS -> SLS_ThermoCalc/presets
-    paths << appDir + "/../../../presets";     // 备用路径
-    paths << appDir + "/../../presets";
-    paths << appDir + "/../presets";
+#ifdef Q_OS_MAC
+    // === macOS 搜索顺序 ===
+    // 1. 应用程序包内部 (打包分发时使用)
+    //    SLS_ThermoCalc.app/Contents/Resources/presets
+    paths << appDir + "/../Resources/presets";
+    
+    // 2. 应用程序包旁边 (与.app同目录)
+    paths << appDir + "/../../../../presets";  // bin/xxx.app/Contents/MacOS -> 同级presets
+    paths << appDir + "/../../../presets";
+    
+    // 3. 用户数据目录 (独立运行时自动创建)
+    QString userDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    paths << userDataDir + "/presets";
+    
+#else
+    // === Windows/Linux 搜索顺序 ===
+    // 1. 可执行文件同目录
     paths << appDir + "/presets";
     
-    // 开发时的路径 (从 build 目录运行)
+    // 2. 用户数据目录 (独立运行时自动创建)
+    QString userDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    paths << userDataDir + "/presets";
+#endif
+    
+    // === 开发环境路径 (通用) ===
     paths << QDir::currentPath() + "/presets";
     paths << QDir::currentPath() + "/../presets";
     
@@ -179,32 +195,31 @@ QString MainWindow::ensurePresetsFolder() {
         }
     }
     
-    // 没有找到，创建一个预设文件夹
-    // 优先在应用程序目录附近创建
-    QString appDir = QCoreApplication::applicationDirPath();
-    QString presetsDir;
-    
-#ifdef Q_OS_MAC
-    // macOS: 在 SLS_ThermoCalc 目录下创建
-    presetsDir = appDir + "/../../../../presets";
-#else
-    // Windows/Linux: 在可执行文件旁边创建
-    presetsDir = appDir + "/presets";
-#endif
+    // 没有找到现有预设文件夹，在用户数据目录创建
+    // 这样即使是独立的exe文件也能正常工作
+    QString userDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString presetsDir = userDataDir + "/presets";
     
     QDir dir;
     if (dir.mkpath(presetsDir)) {
-        ui->textLog->append(QString("[信息] 创建预设文件夹: %1").arg(QDir(presetsDir).absolutePath()));
-        return QDir(presetsDir).absolutePath();
+        ui->textLog->append(QString("[信息] 创建预设文件夹: %1").arg(presetsDir));
+        return presetsDir;
     }
     
-    // 如果失败，尝试在当前工作目录创建
-    presetsDir = QDir::currentPath() + "/presets";
+    // 如果用户目录也失败，尝试在可执行文件旁边创建
+    QString appDir = QCoreApplication::applicationDirPath();
+#ifdef Q_OS_MAC
+    presetsDir = appDir + "/../Resources/presets";
+#else
+    presetsDir = appDir + "/presets";
+#endif
+    
     if (dir.mkpath(presetsDir)) {
         ui->textLog->append(QString("[信息] 创建预设文件夹: %1").arg(QDir(presetsDir).absolutePath()));
         return QDir(presetsDir).absolutePath();
     }
     
+    ui->textLog->append("[错误] 无法创建预设文件夹");
     return QString();
 }
 

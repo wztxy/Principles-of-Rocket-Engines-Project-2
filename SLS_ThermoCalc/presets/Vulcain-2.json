@@ -11,8 +11,8 @@
     "engineDefinition": {
         "description": "Ariane 5 Core Stage Engine (LOX/LH2)",
         "name": "Vulcain-2",
-        "specificImpulse_vac_s": 434,
-        "thrust_kN": 1350
+        "specificImpulse_vac_s": 429,
+        "thrust_kN": 1359
     },
     "nozzleConditions": {
         "exitPressure_atm": 0.05,

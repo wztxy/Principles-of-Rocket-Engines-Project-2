@@ -12,7 +12,7 @@
         "description": "Rocketdyne J-2X - Exploration Upper Stage (LOX/LH2)",
         "name": "J-2X",
         "specificImpulse_vac_s": 448,
-        "thrust_kN": 1310
+        "thrust_kN": 1307
     },
     "nozzleConditions": {
         "exitPressure_atm": 0.001,

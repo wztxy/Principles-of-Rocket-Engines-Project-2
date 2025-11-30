@@ -9,13 +9,13 @@
         "mixtureRatio": 3.6
     },
     "engineDefinition": {
-        "description": "Full-Flow Staged Combustion Engine (LOX/CH4)",
-        "name": "SpaceX Raptor",
-        "specificImpulse_vac_s": 363,
-        "thrust_kN": 2260
+        "description": "SpaceX Raptor 2 Full-Flow Staged Combustion Engine (LOX/CH4)",
+        "name": "SpaceX Raptor 2",
+        "specificImpulse_vac_s": 350,
+        "thrust_kN": 2256
     },
     "nozzleConditions": {
-        "exitPressure_atm": 1,
+        "exitPressure_atm": 0.4,
         "flowType": "equilibrium"
     },
     "propellant": {

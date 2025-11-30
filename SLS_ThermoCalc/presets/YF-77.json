@@ -3,7 +3,7 @@
     "combustorConditions": {
         "chamberPressure": {
             "units": "MPa",
-            "value": 10.2
+            "value": 10.1
         },
         "initialEnthalpy_kJ_kg": -987,
         "mixtureRatio": 5.5
@@ -11,7 +11,7 @@
     "engineDefinition": {
         "description": "长征五号芯一级发动机 (LOX/LH2)",
         "name": "YF-77",
-        "specificImpulse_vac_s": 430,
+        "specificImpulse_vac_s": 428,
         "thrust_kN": 700
     },
     "nozzleConditions": {
