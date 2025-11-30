@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-macos:
     runs-on: macos-latest
@@ -15,7 +18,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.6.*'
+          version: '6.8.*'
           modules: 'qtcharts'
           
       - name: Configure CMake
@@ -50,9 +53,9 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.6.*'
+          version: '6.8.*'
           modules: 'qtcharts'
-          arch: 'win64_msvc2019_64'
+          arch: 'win64_msvc2022_64'
           
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1

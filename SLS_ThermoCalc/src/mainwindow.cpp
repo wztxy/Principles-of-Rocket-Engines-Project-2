@@ -319,20 +319,30 @@ void MainWindow::onClearResults() {
 }
 
 void MainWindow::onAbout() {
-    QMessageBox::about(this, "关于",
-                       "<h2>SLS火箭发动机热力计算系统</h2>"
-                       "<p>版本 1.0</p>"
-                       "<p>基于最小吉布斯自由能法实现燃烧室和喷管热力计算</p>"
-                       "<p></p>"
-                       "<p><b>主要功能:</b></p>"
-                       "<ul>"
-                       "<li>燃烧室平衡组分计算</li>"
-                       "<li>燃烧温度确定</li>"
-                       "<li>喷管等熵膨胀计算</li>"
-                       "<li>热力性能参数输出</li>"
-                       "</ul>"
-                       "<p></p>"
-                       "<p>火箭发动机原理课程大作业2</p>");
+    QMessageBox aboutBox(this);
+    aboutBox.setWindowTitle("关于 SLS ThermoCalc");
+    aboutBox.setIconPixmap(QPixmap(":/icons/rocket.svg").scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    
+    QString aboutText = 
+        "<h2 style='margin-bottom: 10px;'>SLS ThermoCalc</h2>"
+        "<p>版本 1.0.0</p>"
+        "<p>SLS 火箭发动机热力计算系统</p>"
+        "<p style='margin-top: 15px;'>"
+        "基于<b>最小吉布斯自由能法</b>实现燃烧室平衡组分计算和喷管等熵膨胀分析。"
+        "采用 NASA CEA 9系数多项式进行热力学性质计算。</p>"
+        "<p style='margin-top: 15px;'><b>支持发动机:</b></p>"
+        "<ul>"
+        "<li>RS-25 (SSME) - SLS 核心级</li>"
+        "<li>RL-10B2 - 上面级</li>"
+        "<li>J-2X - 探索上面级</li>"
+        "</ul>"
+        "<p style='margin-top: 15px;'>"
+        "Copyright © 2025. 火箭发动机原理课程大作业。</p>"
+        "<p>本程序基于 Qt 框架开发，采用 C/C++ 语言编写。</p>";
+    
+    aboutBox.setText(aboutText);
+    aboutBox.setStandardButtons(QMessageBox::Ok);
+    aboutBox.exec();
 }
 
 QString MainWindow::formatNumber(double value, int precision) {
