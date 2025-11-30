@@ -2,46 +2,59 @@
   "version": 1,
   "application": "SLS_ThermoCalc",
   "engineDefinition": {
-    "name": "RL-10B2",
-    "description": "Upper Stage Engine - Delta IV / SLS Exploration Upper Stage",
-    "thrust_kN": 110,
+    "name": "RL10B-2",
+    "description": "Pratt & Whitney RL10B-2 - Delta IV/DCSS Upper Stage (LOX/LH2)",
+    "thrust_kN": 110.1,
     "specificImpulse_vac_s": 465.5
   },
   "combustorConditions": {
     "chamberPressure": {
-      "value": 4.36,
-      "units": "MPa"
+      "value": 4.3644,
+      "units": "MPa",
+      "value_atm": 43.1
     },
     "mixtureRatio": 5.88,
-    "initialEnthalpy_kJ_kg": -3920
+    "initialEnthalpy_kJ_kg": -1210.92,
+    "temperatureScan": {
+      "T_min_K": 3000,
+      "T_max_K": 4000,
+      "delta_T_K": 50
+    }
   },
   "propellant": {
     "type": "bipropellant",
+    "numComponents": 2,
+    "numElements": 2,
     "oxidizer": {
       "name": "O2(L)",
       "formula": "O2",
-      "massFraction": 1.0
+      "massFraction": 0.8547,
+      "atomMatrix": [0, 2]
     },
     "fuel": {
       "name": "H2(L)",
       "formula": "H2",
-      "massFraction": 1.0
-    }
+      "massFraction": 0.1453,
+      "atomMatrix": [2, 0]
+    },
+    "elementAtomicWeights": [1.008, 15.9994]
+  },
+  "equilibriumProducts": {
+    "numSpecies": 8,
+    "numCondensed": 0,
+    "species": ["H", "H2", "H2O", "O", "O2", "OH", "HO2", "H2O2"],
+    "initialGuess": [1e-3, 1e-7, 10, 30, 1e-7, 1e-5, 1e-5, 1e-5],
+    "Aij_H": [1, 2, 2, 0, 0, 1, 1, 2],
+    "Aij_O": [0, 0, 1, 1, 2, 1, 2, 2]
   },
   "nozzleConditions": {
-    "exitPressure_atm": 0.0001,
+    "exitPressure_atm": 0.001,
     "areaRatio": 285,
-    "flowType": "frozen",
-    "frozenAtAreaRatio": 3
+    "flowType": "equilibrium",
+    "calculationType": 1
   },
   "thermodynamicModel": {
     "method": "minimumGibbsFreeEnergy",
-    "coefficients": "NASA-9",
-    "temperatureRanges": [
-      {"min": 200, "max": 1000},
-      {"min": 1000, "max": 6000},
-      {"min": 6000, "max": 20000}
-    ]
-  },
-  "species": ["H", "H2", "H2O", "O", "O2", "OH"]
+    "coefficients": "NASA-9"
+  }
 }

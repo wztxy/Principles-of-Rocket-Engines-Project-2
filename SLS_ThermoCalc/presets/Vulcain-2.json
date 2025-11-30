@@ -2,19 +2,18 @@
   "version": 1,
   "application": "SLS_ThermoCalc",
   "engineDefinition": {
-    "name": "RS-25 (SSME)",
-    "description": "Space Shuttle Main Engine - SLS Core Stage (LOX/LH2)",
-    "thrust_kN": 2279,
-    "specificImpulse_vac_s": 452.3,
-    "specificImpulse_sl_s": 366
+    "name": "Vulcain 2",
+    "description": "Snecma Vulcain 2 - Ariane 5 Core Stage (LOX/LH2)",
+    "thrust_kN": 1359,
+    "specificImpulse_vac_s": 434
   },
   "combustorConditions": {
     "chamberPressure": {
-      "value": 20.64,
-      "units": "MPa",
-      "value_atm": 203.7
+      "value": 117.3,
+      "units": "bar",
+      "value_atm": 115.8
     },
-    "mixtureRatio": 6.03,
+    "mixtureRatio": 6.7,
     "initialEnthalpy_kJ_kg": -1210.92,
     "temperatureScan": {
       "T_min_K": 3000,
@@ -29,13 +28,13 @@
     "oxidizer": {
       "name": "O2(L)",
       "formula": "O2",
-      "massFraction": 0.8578,
+      "massFraction": 0.8701,
       "atomMatrix": [0, 2]
     },
     "fuel": {
       "name": "H2(L)",
       "formula": "H2",
-      "massFraction": 0.1422,
+      "massFraction": 0.1299,
       "atomMatrix": [2, 0]
     },
     "elementAtomicWeights": [1.008, 15.9994]
@@ -49,18 +48,13 @@
     "Aij_O": [0, 0, 1, 1, 2, 1, 2, 2]
   },
   "nozzleConditions": {
-    "exitPressure_atm": 0.5,
-    "areaRatio": 77.5,
+    "exitPressure_atm": 0.001,
+    "areaRatio": 58.2,
     "flowType": "equilibrium",
     "calculationType": 1
   },
   "thermodynamicModel": {
     "method": "minimumGibbsFreeEnergy",
-    "coefficients": "NASA-9",
-    "temperatureRanges": [
-      {"min": 200, "max": 1000},
-      {"min": 1000, "max": 6000},
-      {"min": 6000, "max": 20000}
-    ]
+    "coefficients": "NASA-9"
   }
 }

@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QVector>
+#include <QDir>
+#include <QFileInfo>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -13,6 +15,17 @@ extern "C" {
 #include "thermo_core.h"
 #include "propellant_db.h"
 }
+
+// 预设信息结构体
+struct PresetInfo {
+    QString name;           // 发动机名称
+    QString description;    // 描述
+    QString filePath;       // JSON文件路径
+    double thrust_kN;       // 推力
+    double isp_vac;         // 真空比冲
+    double chamberPressure; // 燃烧室压力 MPa
+    double mixtureRatio;    // 混合比
+};
 
 class MainWindow : public QMainWindow
 {
@@ -58,10 +71,18 @@ private:
     ThermoResult m_lastResult;
     bool m_hasResult;
     
+    // 预设列表
+    QVector<PresetInfo> m_presets;
+    
     // 初始化界面
     void setupUI();
     void setupConnections();
     void setupEnginePresets();
+    
+    // 动态加载预设文件
+    void loadPresetsFromFolder();
+    QStringList getPresetsFolderPaths();
+    bool parsePresetInfo(const QString& filePath, PresetInfo& info);
     
     // 从界面读取参数
     void readInputParameters();

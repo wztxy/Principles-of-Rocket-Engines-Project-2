@@ -116,41 +116,163 @@ void MainWindow::setupConnections() {
 }
 
 void MainWindow::setupEnginePresets() {
-    ui->comboEngine->addItem("RS-25 (SSME) - SLS核心级", ENGINE_RS25);
-    ui->comboEngine->addItem("RL-10B2 - 上面级", ENGINE_RL10);
-    ui->comboEngine->addItem("J-2X - 探索上面级", ENGINE_J2X);
-    ui->comboEngine->addItem("自定义参数", ENGINE_CUSTOM);
+    // 动态加载预设文件
+    loadPresetsFromFolder();
+    
+    // 添加自定义选项
+    ui->comboEngine->addItem("── 自定义参数 ──", -1);
 
-    // 默认选择RS-25
-    onEngineChanged(0);
+    // 默认选择第一个预设
+    if (ui->comboEngine->count() > 1) {
+        onEngineChanged(0);
+    }
+}
+
+QStringList MainWindow::getPresetsFolderPaths() {
+    QStringList paths;
+    
+    // 可能的预设文件夹路径
+    QString appDir = QCoreApplication::applicationDirPath();
+    
+    // macOS: app/Contents/MacOS -> 向上三级到 SLS_ThermoCalc
+    paths << appDir + "/../../../presets";
+    paths << appDir + "/../../presets";
+    paths << appDir + "/../presets";
+    paths << appDir + "/presets";
+    
+    // Windows: 直接在可执行文件旁边
+    paths << appDir + "/presets";
+    
+    // 开发时的路径
+    paths << QDir::currentPath() + "/presets";
+    paths << QDir::currentPath() + "/../presets";
+    
+    return paths;
+}
+
+void MainWindow::loadPresetsFromFolder() {
+    m_presets.clear();
+    ui->comboEngine->clear();
+    
+    QStringList searchPaths = getPresetsFolderPaths();
+    QString presetsDir;
+    
+    // 查找存在的预设文件夹
+    for (const QString& path : searchPaths) {
+        QDir dir(path);
+        if (dir.exists()) {
+            presetsDir = dir.absolutePath();
+            break;
+        }
+    }
+    
+    if (presetsDir.isEmpty()) {
+        ui->textLog->append("[警告] 未找到预设文件夹，使用默认配置");
+        // 添加默认的内置预设
+        ui->comboEngine->addItem("RS-25 (SSME) - SLS核心级", ENGINE_RS25);
+        ui->comboEngine->addItem("RL-10B2 - 上面级", ENGINE_RL10);
+        ui->comboEngine->addItem("J-2X - 探索上面级", ENGINE_J2X);
+        return;
+    }
+    
+    ui->textLog->append(QString("[信息] 从 %1 加载预设...").arg(presetsDir));
+    
+    // 获取所有 JSON 文件
+    QDir dir(presetsDir);
+    QStringList filters;
+    filters << "*.json";
+    QFileInfoList files = dir.entryInfoList(filters, QDir::Files, QDir::Name);
+    
+    int loadedCount = 0;
+    for (const QFileInfo& fileInfo : files) {
+        // 跳过模板和自述文件
+        if (fileInfo.fileName().contains("template", Qt::CaseInsensitive) ||
+            fileInfo.fileName().contains("README", Qt::CaseInsensitive)) {
+            continue;
+        }
+        
+        PresetInfo info;
+        if (parsePresetInfo(fileInfo.absoluteFilePath(), info)) {
+            m_presets.append(info);
+            
+            // 添加到下拉框，显示名称和简要信息
+            QString displayText = QString("%1 (%2 MPa, O/F=%3)")
+                                     .arg(info.name)
+                                     .arg(info.chamberPressure, 0, 'f', 1)
+                                     .arg(info.mixtureRatio, 0, 'f', 2);
+            ui->comboEngine->addItem(displayText, m_presets.size() - 1);
+            loadedCount++;
+        }
+    }
+    
+    ui->textLog->append(QString("[信息] 已加载 %1 个发动机预设").arg(loadedCount));
+}
+
+bool MainWindow::parsePresetInfo(const QString& filePath, PresetInfo& info) {
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return false;
+    }
+    
+    QByteArray data = file.readAll();
+    file.close();
+    
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+    if (error.error != QJsonParseError::NoError) {
+        return false;
+    }
+    
+    QJsonObject root = doc.object();
+    
+    // 解析发动机定义
+    QJsonObject engineDef = root["engineDefinition"].toObject();
+    info.name = engineDef["name"].toString();
+    info.description = engineDef["description"].toString();
+    info.thrust_kN = engineDef["thrust_kN"].toDouble();
+    info.isp_vac = engineDef["specificImpulse_vac_s"].toDouble();
+    info.filePath = filePath;
+    
+    // 解析燃烧室条件
+    QJsonObject combustor = root["combustorConditions"].toObject();
+    QJsonObject chamberPressure = combustor["chamberPressure"].toObject();
+    info.chamberPressure = chamberPressure["value"].toDouble();
+    info.mixtureRatio = combustor["mixtureRatio"].toDouble();
+    
+    return !info.name.isEmpty();
 }
 
 void MainWindow::onEngineChanged(int index) {
-    EngineType type = static_cast<EngineType>(ui->comboEngine->itemData(index).toInt());
-    const EnginePreset* preset = get_engine_preset(type);
-
-    if (preset) {
-        // 更新界面参数
-        ui->spinMixtureRatio->setValue(preset->mixture_ratio);
-        ui->spinChamberPressure->setValue(preset->chamber_pressure);
-
-        // 更新发动机信息
+    int presetIndex = ui->comboEngine->itemData(index).toInt();
+    
+    // 检查是否是"自定义参数"
+    if (presetIndex < 0 || presetIndex >= m_presets.size()) {
+        // 自定义参数模式，不更改当前配置
+        ui->lblEngineInfo->setText("自定义参数模式\n手动设置所有参数");
+        ui->textLog->append(QString("[%1] 选择: 自定义参数模式")
+                               .arg(QDateTime::currentDateTime().toString("hh:mm:ss")));
+        return;
+    }
+    
+    const PresetInfo& preset = m_presets[presetIndex];
+    
+    // 加载预设文件
+    if (loadPresetFromJson(preset.filePath)) {
+        // 更新发动机信息显示
         QString info = QString("%1\n推力: %2 kN, 真空比冲: %3 s")
-                           .arg(QString::fromUtf8(preset->description))
-                           .arg(preset->thrust, 0, 'f', 1)
-                           .arg(preset->specific_impulse_vac, 0, 'f', 1);
+                           .arg(preset.description)
+                           .arg(preset.thrust_kN, 0, 'f', 1)
+                           .arg(preset.isp_vac, 0, 'f', 1);
         ui->lblEngineInfo->setText(info);
-
-        // 复制配置
-        m_currentConfig = preset->config;
-
-        // 更新质量分数显示
-        onMixtureRatioChanged(preset->mixture_ratio);
-
+        
         // 记录日志
         ui->textLog->append(QString("[%1] 选择发动机: %2")
                                 .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
-                                .arg(QString::fromUtf8(preset->name)));
+                                .arg(preset.name));
+    } else {
+        // 加载失败，使用默认配置
+        QMessageBox::warning(this, "加载失败", 
+                            QString("无法加载预设文件: %1").arg(preset.filePath));
     }
 }
 
@@ -617,6 +739,10 @@ bool MainWindow::loadPresetFromJson(const QString& filename) {
                     ui->spinChamberPressure->setValue(pressure);
                 else if (units == "atm")
                     ui->spinChamberPressure->setValue(pressure * 0.101325);
+                else if (units == "bar")
+                    ui->spinChamberPressure->setValue(pressure * 0.1);
+                else if (units == "psi")
+                    ui->spinChamberPressure->setValue(pressure * 0.00689476);
             } else {
                 ui->spinChamberPressure->setValue(cpVal.toDouble());
             }
@@ -640,11 +766,14 @@ bool MainWindow::loadPresetFromJson(const QString& filename) {
             ui->spinExitPressure->setValue(nozzle["exitPressure_atm"].toDouble());
     }
     
-    // 设置为自定义引擎模式并更新信息
-    ui->comboEngine->setCurrentIndex(ui->comboEngine->count() - 1);
-    if (!engineName.isEmpty()) {
-        ui->lblEngineInfo->setText(QString("已导入: %1").arg(engineName));
+    // 使用默认的 LOX/LH2 热力学配置
+    const EnginePreset* defaultPreset = get_engine_preset(ENGINE_RS25);
+    if (defaultPreset) {
+        m_currentConfig = defaultPreset->config;
     }
+    
+    // 更新质量分数
+    onMixtureRatioChanged(ui->spinMixtureRatio->value());
     
     return true;
 }

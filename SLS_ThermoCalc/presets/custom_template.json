@@ -3,51 +3,71 @@
   "application": "SLS_ThermoCalc",
   "engineDefinition": {
     "name": "Custom Engine",
-    "description": "User-defined configuration template",
+    "description": "User-defined LOX/LH2 engine configuration template",
     "thrust_kN": 0,
     "specificImpulse_vac_s": 0
   },
   "combustorConditions": {
     "chamberPressure": {
       "value": 10.0,
-      "units": "MPa"
+      "units": "MPa",
+      "value_atm": 98.7
     },
     "mixtureRatio": 6.0,
-    "initialEnthalpy_kJ_kg": -3920
+    "initialEnthalpy_kJ_kg": -1210.92,
+    "temperatureScan": {
+      "T_min_K": 3000,
+      "T_max_K": 4000,
+      "delta_T_K": 50
+    }
   },
   "propellant": {
     "type": "bipropellant",
+    "numComponents": 2,
+    "numElements": 2,
     "oxidizer": {
       "name": "O2(L)",
       "formula": "O2",
-      "massFraction": 1.0
+      "massFraction": 0.8571,
+      "atomMatrix": [0, 2]
     },
     "fuel": {
       "name": "H2(L)",
       "formula": "H2",
-      "massFraction": 1.0
-    }
+      "massFraction": 0.1429,
+      "atomMatrix": [2, 0]
+    },
+    "elementAtomicWeights": [1.008, 15.9994]
+  },
+  "equilibriumProducts": {
+    "numSpecies": 8,
+    "numCondensed": 0,
+    "species": ["H", "H2", "H2O", "O", "O2", "OH", "HO2", "H2O2"],
+    "initialGuess": [1e-3, 1e-7, 10, 30, 1e-7, 1e-5, 1e-5, 1e-5],
+    "Aij_H": [1, 2, 2, 0, 0, 1, 1, 2],
+    "Aij_O": [0, 0, 1, 1, 2, 1, 2, 2]
   },
   "nozzleConditions": {
-    "exitPressure_atm": 0.01,
+    "exitPressure_atm": 0.5,
     "areaRatio": 50,
-    "flowType": "equilibrium"
+    "flowType": "equilibrium",
+    "calculationType": 1
   },
   "thermodynamicModel": {
     "method": "minimumGibbsFreeEnergy",
-    "coefficients": "NASA-9",
-    "temperatureRanges": [
-      {"min": 200, "max": 1000},
-      {"min": 1000, "max": 6000},
-      {"min": 6000, "max": 20000}
-    ]
+    "coefficients": "NASA-9"
   },
-  "species": ["H", "H2", "H2O", "O", "O2", "OH"],
-  "_comments": {
-    "chamberPressure": "Combustion chamber pressure in MPa",
-    "mixtureRatio": "Oxidizer to fuel mass ratio (O/F)",
-    "initialEnthalpy": "Propellant initial enthalpy in kJ/kg (negative for cryogenic)",
-    "exitPressure": "Nozzle exit pressure in atm",
-    "flowType": "equilibrium or frozen"
+  "_documentation": {
+    "chamberPressure": "Combustion chamber pressure (supports MPa, bar, atm, psi units)",
+    "mixtureRatio": "Oxidizer to Fuel mass ratio (O/F)",
+    "initialEnthalpy_kJ_kg": "Propellant initial enthalpy in kJ/kg (-1210.92 for cryogenic LOX/LH2)",
+    "temperatureScan": "Temperature range for combustion temperature iteration (K)",
+    "equilibriumProducts": {
+      "species": "Chemical species in equilibrium calculation",
+      "initialGuess": "Initial mole fractions for iterative solver",
+      "Aij_H": "H atoms per molecule for each species",
+      "Aij_O": "O atoms per molecule for each species"
+    },
+    "calculationType": "1 = given exit pressure (equilibrium flow), 2 = given exit temperature (frozen flow)"
   }
 }
