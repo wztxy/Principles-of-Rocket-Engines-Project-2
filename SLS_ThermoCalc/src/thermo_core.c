@@ -1112,14 +1112,27 @@ int thermo_calculate(const PropellantInput* input,
     for (i = 0; i < input->num_species; i++) {
         c_init[i] = 1e-5;
     }
-    /* H2/O2燃烧的主要产物初值: H, H2, H2O, O, O2, OH */
-    if (input->num_species >= 6) {
+    
+    /* 根据元素数和产物数设置初值 */
+    if (input->num_elements == 2 && input->num_species >= 6) {
+        /* H2/O2燃烧的主要产物初值: H, H2, H2O, O, O2, OH */
         c_init[0] = 1e-3;   /* H */
         c_init[1] = 10.0;   /* H2 */
         c_init[2] = 30.0;   /* H2O - 主产物 */
         c_init[3] = 1e-4;   /* O */
         c_init[4] = 1e-3;   /* O2 */
         c_init[5] = 1.0;    /* OH */
+    } else if (input->num_elements == 3 && input->num_species >= 8) {
+        /* CH4/O2燃烧的主要产物初值: H2O, H2, OH, H, CO2, CO, O2, O */
+        /* 来自程序/test.cpp */
+        c_init[0] = 35.6;   /* H2O - 主产物 */
+        c_init[1] = 1e-1;   /* H2 */
+        c_init[2] = 1e-2;   /* OH */
+        c_init[3] = 1e-5;   /* H */
+        c_init[4] = 5.6;    /* CO2 */
+        c_init[5] = 6.0;    /* CO */
+        c_init[6] = 1e-5;   /* O2 */
+        c_init[7] = 1e-6;   /* O */
     }
     
     /* 燃烧室计算 */

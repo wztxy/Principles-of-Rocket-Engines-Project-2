@@ -80,8 +80,10 @@ void MainWindow::setupUI() {
         ui->tableNozzle->setItem(i, 1, new QTableWidgetItem("-"));
     }
 
-    // 初始化组分表
-    QStringList speciesNames = {"H", "H₂", "H₂O", "O", "O₂", "OH"};
+    // 初始化组分表 - 支持多种推进剂类型
+    // LOX/LH2: H, H2, H2O, O, O2, OH (6种)
+    // LOX/CH4: H2O, H2, OH, H, CO2, CO, O2, O (8种)
+    QStringList speciesNames = {"H₂O", "H₂", "OH", "H", "CO₂", "CO", "O₂", "O"};
     ui->tableSpecies->setRowCount(speciesNames.size());
     for (int i = 0; i < speciesNames.size(); ++i) {
         ui->tableSpecies->setItem(i, 0, new QTableWidgetItem(speciesNames[i]));
@@ -346,11 +348,30 @@ void MainWindow::displayResults(const ThermoResult& result) {
     displayChamberResults(result.chamber);
     displayNozzleResults(result.nozzle);
 
-    // 更新组分表
-    QStringList speciesNames = {"H", "H₂", "H₂O", "O", "O₂", "OH"};
-    int numSpecies = qMin(m_currentConfig.num_species, 6);
+    // 更新组分表 - 根据推进剂类型显示不同组分名称
+    QStringList speciesNames;
+    if (m_currentConfig.num_elements == 3) {
+        // LOX/CH4: H2O, H2, OH, H, CO2, CO, O2, O
+        speciesNames = {"H₂O", "H₂", "OH", "H", "CO₂", "CO", "O₂", "O"};
+    } else {
+        // LOX/LH2: H, H2, H2O, O, O2, OH
+        speciesNames = {"H", "H₂", "H₂O", "O", "O₂", "OH", "-", "-"};
+    }
+    
+    int numSpecies = qMin(m_currentConfig.num_species, 8);
+    
+    // 更新表格行数
+    ui->tableSpecies->setRowCount(numSpecies);
 
     for (int i = 0; i < numSpecies; ++i) {
+        if (!ui->tableSpecies->item(i, 0))
+            ui->tableSpecies->setItem(i, 0, new QTableWidgetItem());
+        if (!ui->tableSpecies->item(i, 1))
+            ui->tableSpecies->setItem(i, 1, new QTableWidgetItem());
+        if (!ui->tableSpecies->item(i, 2))
+            ui->tableSpecies->setItem(i, 2, new QTableWidgetItem());
+            
+        ui->tableSpecies->item(i, 0)->setText(speciesNames[i]);
         ui->tableSpecies->item(i, 1)->setText(formatNumber(result.chamber.mole_fractions[i], 6));
         ui->tableSpecies->item(i, 2)->setText(formatNumber(result.nozzle.mole_fractions[i], 6));
     }
@@ -467,8 +488,14 @@ void MainWindow::onExportResults() {
     out << QString("喉部速度 u*: %1 m/s\n\n").arg(m_lastResult.nozzle.throat_velocity, 0, 'f', 1);
     
     out << "【平衡组分】\n";
-    QStringList speciesNames = {"H", "H2", "H2O", "O", "O2", "OH"};
-    for (int i = 0; i < qMin(m_currentConfig.num_species, 6); ++i) {
+    QStringList speciesNames;
+    if (m_currentConfig.num_elements == 3) {
+        speciesNames = {"H2O", "H2", "OH", "H", "CO2", "CO", "O2", "O"};
+    } else {
+        speciesNames = {"H", "H2", "H2O", "O", "O2", "OH"};
+    }
+    int numExportSpecies = qMin(m_currentConfig.num_species, speciesNames.size());
+    for (int i = 0; i < numExportSpecies; ++i) {
         out << QString("%1: 燃烧室 %2, 出口 %3\n")
                .arg(speciesNames[i], -6)
                .arg(m_lastResult.chamber.mole_fractions[i], 0, 'e', 4)
@@ -508,16 +535,22 @@ void MainWindow::onAbout() {
     
     QString aboutText = 
         "<h2 style='margin-bottom: 10px;'>SLS ThermoCalc</h2>"
-        "<p>版本 1.0.0</p>"
+        "<p>版本 1.1.0</p>"
         "<p>SLS 火箭发动机热力计算系统</p>"
         "<p style='margin-top: 15px;'>"
         "基于<b>最小吉布斯自由能法</b>实现燃烧室平衡组分计算和喷管等熵膨胀分析。"
         "采用 NASA CEA 9系数多项式进行热力学性质计算。</p>"
-        "<p style='margin-top: 15px;'><b>支持发动机:</b></p>"
+        "<p style='margin-top: 15px;'><b>支持推进剂类型:</b></p>"
         "<ul>"
-        "<li>RS-25 (SSME) - SLS 核心级</li>"
-        "<li>RL-10B2 - 上面级</li>"
-        "<li>J-2X - 探索上面级</li>"
+        "<li>LOX/LH2 - 液氧/液氢 (6种产物)</li>"
+        "<li>LOX/CH4 - 液氧/甲烷 (8种产物)</li>"
+        "</ul>"
+        "<p><b>支持发动机:</b></p>"
+        "<ul>"
+        "<li>RS-25 (SSME) - SLS 核心级 [LOX/LH2]</li>"
+        "<li>RL-10B2 - 上面级 [LOX/LH2]</li>"
+        "<li>J-2X - 探索上面级 [LOX/LH2]</li>"
+        "<li>SpaceX Raptor - 全流量分级燃烧 [LOX/CH4]</li>"
         "</ul>"
         "<p style='margin-top: 15px;'>"
         "Copyright © 2025. 火箭发动机原理课程大作业。</p>"
@@ -766,10 +799,28 @@ bool MainWindow::loadPresetFromJson(const QString& filename) {
             ui->spinExitPressure->setValue(nozzle["exitPressure_atm"].toDouble());
     }
     
-    // 使用默认的 LOX/LH2 热力学配置
-    const EnginePreset* defaultPreset = get_engine_preset(ENGINE_RS25);
-    if (defaultPreset) {
-        m_currentConfig = defaultPreset->config;
+    // 检测推进剂类型并选择适当的配置
+    QString propellantType = "LOX_LH2";  // 默认
+    
+    if (root.contains("propellant")) {
+        QJsonObject propellant = root["propellant"].toObject();
+        if (propellant.contains("type")) {
+            propellantType = propellant["type"].toString();
+        }
+    }
+    
+    // 根据推进剂类型选择热力学配置
+    if (propellantType == "LOX_CH4" || propellantType == "CH4_LOX") {
+        // 使用 LOX/CH4 配置 (Raptor)
+        init_lox_ch4_config(&m_currentConfig);
+        ui->textLog->append("[信息] 使用 LOX/CH4 推进剂配置 (8种产物)");
+    } else {
+        // 默认使用 LOX/LH2 配置
+        const EnginePreset* defaultPreset = get_engine_preset(ENGINE_RS25);
+        if (defaultPreset) {
+            m_currentConfig = defaultPreset->config;
+        }
+        ui->textLog->append("[信息] 使用 LOX/LH2 推进剂配置 (6种产物)");
     }
     
     // 更新质量分数

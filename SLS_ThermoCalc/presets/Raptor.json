@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "application": "SLS_ThermoCalc",
+  "engineDefinition": {
+    "name": "SpaceX Raptor",
+    "description": "Full-Flow Staged Combustion Engine (LOX/CH4)",
+    "thrust_kN": 2260,
+    "specificImpulse_vac_s": 363
+  },
+  "propellant": {
+    "type": "LOX_CH4",
+    "oxidizer": {
+      "name": "O2(L)",
+      "formula": "O2",
+      "massFraction": 0.7826
+    },
+    "fuel": {
+      "name": "CH4(L)",
+      "formula": "CH4",
+      "massFraction": 0.2174
+    }
+  },
+  "combustorConditions": {
+    "chamberPressure": {
+      "value": 30.0,
+      "units": "MPa"
+    },
+    "mixtureRatio": 3.6,
+    "initialEnthalpy_kJ_kg": -2875.72,
+    "initialTemperature_K": 298.15
+  },
+  "nozzleConditions": {
+    "exitPressure_atm": 1.0,
+    "flowType": "equilibrium"
+  },
+  "thermodynamicModel": {
+    "method": "minimumGibbsFreeEnergy",
+    "coefficients": "NASA-9"
+  },
+  "species": ["H2O", "H2", "OH", "H", "CO2", "CO", "O2", "O"],
+  "source": "SpaceX public data",
+  "notes": "Full-flow staged combustion cycle, methane fuel, designed for Starship/Super Heavy"
+}

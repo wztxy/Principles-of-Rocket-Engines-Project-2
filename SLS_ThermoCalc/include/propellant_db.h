@@ -13,12 +13,25 @@ extern "C" {
 #include "thermo_core.h"
 
 /**
+ * @brief 推进剂类型枚举
+ */
+typedef enum {
+    PROPELLANT_LOX_LH2,     /* 液氧/液氢 (LOX/LH2) */
+    PROPELLANT_LOX_CH4,     /* 液氧/甲烷 (LOX/CH4) */
+    PROPELLANT_LOX_RP1,     /* 液氧/煤油 (LOX/RP-1) */
+    PROPELLANT_CUSTOM       /* 自定义 */
+} PropellantType;
+
+/**
  * @brief 预设发动机类型枚举
  */
 typedef enum {
     ENGINE_RS25,            /* RS-25 (SSME) - 液氢/液氧 */
     ENGINE_RL10,            /* RL-10 - 液氢/液氧 */
     ENGINE_J2X,             /* J-2X - 液氢/液氧 */
+    ENGINE_RAPTOR,          /* SpaceX Raptor - 甲烷/液氧 */
+    ENGINE_MERLIN,          /* SpaceX Merlin - 煤油/液氧 */
+    ENGINE_RD170,           /* RD-170 - 煤油/液氧 */
     ENGINE_CUSTOM           /* 自定义 */
 } EngineType;
 
@@ -59,6 +72,18 @@ void init_rs25_config(PropellantInput* input);
  * @brief 初始化RL-10发动机配置
  */
 void init_rl10_config(PropellantInput* input);
+
+/**
+ * @brief 初始化LOX/CH4推进剂配置
+ * @param input 输出配置
+ * @note 8种产物(H2O, H2, OH, H, CO2, CO, O2, O), 3种元素(H, C, O)
+ */
+void init_lox_ch4_config(PropellantInput* input);
+
+/**
+ * @brief 初始化Raptor发动机配置 (SpaceX)
+ */
+void init_raptor_config(PropellantInput* input);
 
 /**
  * @brief 根据混合比计算推进剂质量分数
