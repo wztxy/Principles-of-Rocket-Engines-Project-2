@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(SLS_ThermoCalc VERSION 1.0 LANGUAGES C CXX)
+project(SLS_ThermoCalc VERSION 1.1.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,11 +8,20 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+# 版本信息
+add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
+
 # UI 文件搜索路径
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/ui)
 
-# Qt 组件
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Charts)
+# Qt 组件 - 支持 Qt6 和 Qt5
+find_package(Qt6 COMPONENTS Core Gui Widgets Charts QUIET)
+if(NOT Qt6_FOUND)
+    find_package(Qt5 5.15 REQUIRED COMPONENTS Core Gui Widgets Charts)
+    set(QT_VERSION_MAJOR 5)
+else()
+    set(QT_VERSION_MAJOR 6)
+endif()
 
 # 包含目录
 include_directories(
@@ -73,6 +82,12 @@ if(APPLE)
     # list(APPEND SOURCES ${APP_ICON_MACOS})
 endif()
 
+if(UNIX AND NOT APPLE)
+    # Linux: 设置 RPATH
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+endif()
+
 # 创建可执行文件
 add_executable(${PROJECT_NAME}
     ${SOURCES}
@@ -82,12 +97,21 @@ add_executable(${PROJECT_NAME}
 )
 
 # 链接 Qt 库
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Widgets
-    Qt6::Charts
-)
+if(QT_VERSION_MAJOR EQUAL 6)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::Charts
+    )
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        Qt5::Core
+        Qt5::Gui
+        Qt5::Widgets
+        Qt5::Charts
+    )
+endif()
 
 # 输出目录
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -100,9 +124,34 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .
     RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
 )
 
 # 复制预设文件
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/presets
     DESTINATION share/${PROJECT_NAME}
 )
+
+# 复制配置目录结构（不含用户配置）
+install(DIRECTORY DESTINATION share/${PROJECT_NAME}/config)
+
+# CPack 配置 (用于创建安装包)
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_VENDOR "SLS Thermodynamics Team")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "火箭发动机热力性能计算程序")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE")
+
+if(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+    set(CPACK_DMG_VOLUME_NAME ${PROJECT_NAME})
+elseif(WIN32)
+    set(CPACK_GENERATOR "ZIP;NSIS")
+    set(CPACK_NSIS_DISPLAY_NAME ${PROJECT_NAME})
+else()
+    set(CPACK_GENERATOR "TGZ;DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "SLS Team")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6, libqt6charts6")
+endif()
+
+include(CPack)
