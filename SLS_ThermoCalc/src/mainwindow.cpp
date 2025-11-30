@@ -25,45 +25,45 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::setupUI() {
-    // 设置表格列宽 - 优化显示效果
-    ui->tableChamber->setColumnWidth(0, 280);
-    ui->tableChamber->setColumnWidth(1, 180);
+    // 设置表格列宽和行高 - 优化显示效果
+    ui->tableChamber->setColumnWidth(0, 260);
+    ui->tableChamber->setColumnWidth(1, 160);
     ui->tableChamber->horizontalHeader()->setStretchLastSection(true);
     ui->tableChamber->verticalHeader()->setVisible(false);
-    ui->tableChamber->setFrameShape(QFrame::NoFrame);
+    ui->tableChamber->verticalHeader()->setDefaultSectionSize(36);
 
-    ui->tableNozzle->setColumnWidth(0, 280);
-    ui->tableNozzle->setColumnWidth(1, 180);
+    ui->tableNozzle->setColumnWidth(0, 260);
+    ui->tableNozzle->setColumnWidth(1, 160);
     ui->tableNozzle->horizontalHeader()->setStretchLastSection(true);
     ui->tableNozzle->verticalHeader()->setVisible(false);
-    ui->tableNozzle->setFrameShape(QFrame::NoFrame);
+    ui->tableNozzle->verticalHeader()->setDefaultSectionSize(36);
 
-    ui->tableSpecies->setColumnWidth(0, 120);
-    ui->tableSpecies->setColumnWidth(1, 180);
-    ui->tableSpecies->setColumnWidth(2, 180);
+    ui->tableSpecies->setColumnWidth(0, 100);
+    ui->tableSpecies->setColumnWidth(1, 160);
+    ui->tableSpecies->setColumnWidth(2, 160);
     ui->tableSpecies->horizontalHeader()->setStretchLastSection(true);
     ui->tableSpecies->verticalHeader()->setVisible(false);
-    ui->tableSpecies->setFrameShape(QFrame::NoFrame);
+    ui->tableSpecies->verticalHeader()->setDefaultSectionSize(36);
 
-    // 初始化燃烧室结果表 - 使用 Unicode 数学符号渲染单位
-    QStringList chamberParams = {"燃烧温度  Tᶜ  [K]",
-                                 "总焓  H  [kJ·kg⁻¹]",
-                                 "总熵  S  [kJ·kg⁻¹·K⁻¹]",
-                                 "平均分子量  M̄  [g·mol⁻¹]",
-                                 "密度  ρ  [kg·m⁻³]",
-                                 "定压比热  Cₚ  [kJ·kg⁻¹·K⁻¹]",
-                                 "定容比热  Cᵥ  [kJ·kg⁻¹·K⁻¹]",
-                                 "比热比  γ",
-                                 "等熵指数  γₛ",
-                                 "声速  a  [m·s⁻¹]",
-                                 "特征速度  c*  [m·s⁻¹]",
-                                 "冻结比热  cₚ,f  [kJ·kg⁻¹·K⁻¹]",
-                                 "冻结比热比  γf",
-                                 "冻结声速  aₓ  [m·s⁻¹]",
-                                 "气体常数  R  [J·kg⁻¹·K⁻¹]",
-                                 "粘性系数  μ  [Pa·s]",
-                                 "导热系数  λ  [W·m⁻¹·K⁻¹]",
-                                 "普朗特数  Pr",
+    // 初始化燃烧室结果表 - 简洁格式，单位用括号
+    QStringList chamberParams = {"燃烧温度 Tc (K)",
+                                 "总焓 H (kJ/kg)",
+                                 "总熵 S (kJ/kg/K)",
+                                 "平均分子量 M (g/mol)",
+                                 "密度 ρ (kg/m³)",
+                                 "定压比热 Cp (kJ/kg/K)",
+                                 "定容比热 Cv (kJ/kg/K)",
+                                 "比热比 γ",
+                                 "等熵指数 γs",
+                                 "声速 a (m/s)",
+                                 "特征速度 c* (m/s)",
+                                 "冻结比热 Cp,f (kJ/kg/K)",
+                                 "冻结比热比 γf",
+                                 "冻结声速 af (m/s)",
+                                 "气体常数 R (J/kg/K)",
+                                 "粘性系数 μ (Pa·s)",
+                                 "导热系数 λ (W/m/K)",
+                                 "普朗特数 Pr",
                                  "收敛状态"};
 
     ui->tableChamber->setRowCount(chamberParams.size());
@@ -72,22 +72,22 @@ void MainWindow::setupUI() {
         ui->tableChamber->setItem(i, 1, new QTableWidgetItem("-"));
     }
 
-    // 初始化喷管结果表 - 使用 Unicode 数学符号渲染单位
-    QStringList nozzleParams = {"出口温度  Tₑ  [K]",
-                                "出口压强  pₑ  [atm]",
-                                "出口速度  vₑ  [m·s⁻¹]",
-                                "比冲  Iₛₚ  [s]",
-                                "真空比冲  Iₛₚ,ᵥₐc  [s]",
-                                "马赫数  Ma",
-                                "推力系数  Cf",
-                                "质量流系数  Γ",
-                                "平均等熵指数  γₘ",
-                                "压力比  pᶜ/pₑ",
-                                "出口密度  ρₑ  [kg·m⁻³]",
-                                "出口声速  aₑ  [m·s⁻¹]",
-                                "喉部温度  T*  [K]",
-                                "喉部压力  p*  [atm]",
-                                "喉部速度  v*  [m·s⁻¹]",
+    // 初始化喷管结果表 - 简洁格式，单位用括号
+    QStringList nozzleParams = {"出口温度 Te (K)",
+                                "出口压强 pe (atm)",
+                                "出口速度 ve (m/s)",
+                                "比冲 Isp (s)",
+                                "真空比冲 Isp,vac (s)",
+                                "马赫数 Ma",
+                                "推力系数 Cf",
+                                "质量流系数 Γ",
+                                "平均等熵指数 γm",
+                                "压力比 pc/pe",
+                                "出口密度 ρe (kg/m³)",
+                                "出口声速 ae (m/s)",
+                                "喉部温度 T* (K)",
+                                "喉部压力 p* (atm)",
+                                "喉部速度 v* (m/s)",
                                 "收敛状态"};
 
     ui->tableNozzle->setRowCount(nozzleParams.size());
@@ -99,7 +99,7 @@ void MainWindow::setupUI() {
     // 初始化组分表 - 支持多种推进剂类型
     // LOX/LH2: H, H2, H2O, O, O2, OH (6种)
     // LOX/CH4: H2O, H2, OH, H, CO2, CO, O2, O (8种)
-    QStringList speciesNames = {"H₂O", "H₂", "OH", "H", "CO₂", "CO", "O₂", "O"};
+    QStringList speciesNames = {"H2O", "H2", "OH", "H", "CO2", "CO", "O2", "O"};
     ui->tableSpecies->setRowCount(speciesNames.size());
     for (int i = 0; i < speciesNames.size(); ++i) {
         ui->tableSpecies->setItem(i, 0, new QTableWidgetItem(speciesNames[i]));

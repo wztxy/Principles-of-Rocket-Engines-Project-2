@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>🚀 SLS 火箭发动机热力计算系统</string>
+   <string>SLS 火箭发动机热力计算系统</string>
   </property>
   <property name="styleSheet">
    <string notr="true">
@@ -223,58 +223,48 @@ QPushButton#btnExport:hover {
                 stop:0 #50d8c8, stop:1 #40c8b8);
 }
 
-/* ===== 表格样式 - 现代卡片风格 ===== */
+/* ===== 表格样式 - 清晰易读 ===== */
 QTableWidget {
-    background-color: transparent;
-    alternate-background-color: transparent;
-    border: none;
-    border-radius: 12px;
-    gridline-color: transparent;
+    background-color: rgba(10, 16, 26, 0.95);
+    alternate-background-color: rgba(15, 24, 38, 0.95);
+    border: 1px solid rgba(30, 58, 95, 0.5);
+    border-radius: 8px;
+    gridline-color: rgba(30, 58, 95, 0.3);
     color: #e0e6ed;
     font-size: 13px;
-    selection-background-color: transparent;
+    selection-background-color: rgba(0, 180, 216, 0.2);
     outline: none;
 }
 QTableWidget::item {
-    padding: 14px 16px;
-    margin: 4px 8px;
-    border: none;
-    border-radius: 10px;
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 rgba(20, 35, 55, 0.85), stop:1 rgba(15, 28, 45, 0.9));
-}
-QTableWidget::item:alternate {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 rgba(25, 42, 65, 0.85), stop:1 rgba(18, 32, 52, 0.9));
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(30, 58, 95, 0.25);
+    min-height: 28px;
 }
 QTableWidget::item:selected {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                stop:0 rgba(0, 180, 216, 0.3), stop:1 rgba(0, 150, 199, 0.25));
-    border: 1px solid rgba(0, 180, 216, 0.5);
+    background-color: rgba(0, 180, 216, 0.15);
     color: #ffffff;
 }
 QTableWidget::item:hover:!selected {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 rgba(30, 50, 75, 0.9), stop:1 rgba(22, 38, 58, 0.95));
-    border: 1px solid rgba(0, 180, 216, 0.2);
+    background-color: rgba(0, 180, 216, 0.08);
+}
+QHeaderView {
+    background: transparent;
 }
 QHeaderView::section {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 rgba(0, 180, 216, 0.2), stop:1 rgba(0, 150, 199, 0.15));
+                stop:0 rgba(20, 35, 55, 0.98), stop:1 rgba(15, 28, 45, 0.98));
     color: #00d4f8;
     font-weight: bold;
-    font-size: 13px;
-    padding: 14px 16px;
+    font-size: 12px;
+    padding: 12px 16px;
     border: none;
-    border-bottom: 2px solid rgba(0, 180, 216, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    border-bottom: 2px solid rgba(0, 180, 216, 0.5);
 }
 QHeaderView::section:first {
-    border-top-left-radius: 12px;
+    border-top-left-radius: 8px;
 }
 QHeaderView::section:last {
-    border-top-right-radius: 12px;
+    border-top-right-radius: 8px;
 }
 
 /* ===== 文本编辑框样式 ===== */
@@ -516,7 +506,7 @@ QFrame#titleFrame {
           <item>
            <widget class="QLabel" name="lblTitle">
             <property name="text">
-             <string>🚀 热力计算系统</string>
+             <string>热力计算系统</string>
             </property>
             <property name="styleSheet">
              <string>color: #00b4d8; font-size: 16px; font-weight: bold;</string>
@@ -540,7 +530,7 @@ QFrame#titleFrame {
        <item>
         <widget class="QGroupBox" name="groupEngine">
          <property name="title">
-          <string>🔧 发动机选择</string>
+          <string>发动机选择</string>
          </property>
          <layout class="QVBoxLayout" name="engineLayout">
           <property name="spacing">
@@ -576,7 +566,7 @@ QFrame#titleFrame {
        <item>
         <widget class="QGroupBox" name="groupPropellant">
          <property name="title">
-          <string>⚗️ 推进剂参数</string>
+          <string>推进剂参数</string>
          </property>
          <layout class="QGridLayout" name="propellantLayout">
           <property name="horizontalSpacing">
@@ -684,7 +674,7 @@ QFrame#titleFrame {
        <item>
         <widget class="QGroupBox" name="groupChamber">
          <property name="title">
-          <string>🔥 燃烧室参数</string>
+          <string>燃烧室参数</string>
          </property>
          <layout class="QGridLayout" name="chamberLayout">
           <property name="horizontalSpacing">
@@ -732,7 +722,7 @@ QFrame#titleFrame {
        <item>
         <widget class="QGroupBox" name="groupNozzle">
          <property name="title">
-          <string>🎯 喷管参数</string>
+          <string>喷管参数</string>
          </property>
          <layout class="QGridLayout" name="nozzleLayout">
           <property name="horizontalSpacing">
@@ -794,7 +784,7 @@ QFrame#buttonFrame {
           <item>
            <widget class="QPushButton" name="btnCalculate">
             <property name="text">
-             <string>⚡ 开始计算</string>
+             <string>开始计算</string>
             </property>
             <property name="minimumSize">
              <size>
@@ -815,7 +805,7 @@ QFrame#buttonFrame {
             <item>
              <widget class="QPushButton" name="btnExport">
               <property name="text">
-               <string>📥 导出</string>
+               <string>导出结果</string>
               </property>
               <property name="minimumSize">
                <size>
@@ -831,7 +821,7 @@ QFrame#buttonFrame {
             <item>
              <widget class="QPushButton" name="btnClear">
               <property name="text">
-               <string>🗑️ 清空</string>
+               <string>清空</string>
               </property>
               <property name="minimumSize">
                <size>
@@ -878,7 +868,7 @@ QFrame#buttonFrame {
       <!-- 燃烧室结果 -->
       <widget class="QWidget" name="tabChamber">
        <attribute name="title">
-        <string>🔥 燃烧室</string>
+        <string>燃烧室</string>
        </attribute>
        <layout class="QVBoxLayout" name="chamberResultLayout">
         <property name="spacing">
@@ -936,7 +926,7 @@ QFrame#buttonFrame {
       <!-- 喷管结果 -->
       <widget class="QWidget" name="tabNozzle">
        <attribute name="title">
-        <string>🎯 喷管</string>
+        <string>喷管</string>
        </attribute>
        <layout class="QVBoxLayout" name="nozzleResultLayout">
         <property name="spacing">
@@ -991,7 +981,7 @@ QFrame#buttonFrame {
       <!-- 组分详情 -->
       <widget class="QWidget" name="tabSpecies">
        <attribute name="title">
-        <string>⚛️ 组分</string>
+        <string>组分</string>
        </attribute>
        <layout class="QVBoxLayout" name="speciesLayout">
         <property name="spacing">
@@ -1048,7 +1038,7 @@ QFrame#buttonFrame {
       <!-- 日志 -->
       <widget class="QWidget" name="tabLog">
        <attribute name="title">
-        <string>📋 日志</string>
+        <string>日志</string>
        </attribute>
        <layout class="QVBoxLayout" name="logLayout">
         <property name="spacing">
