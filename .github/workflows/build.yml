@@ -21,11 +21,13 @@ jobs:
       - name: Configure CMake
         working-directory: SLS_ThermoCalc
         run: |
-          mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          rm -rf build
+          mkdir -p build/release
+          cd build/release
+          cmake ../.. -DCMAKE_BUILD_TYPE=Release
           
       - name: Build
-        working-directory: SLS_ThermoCalc/build
+        working-directory: SLS_ThermoCalc/build/release
         run: cmake --build . --config Release -j$(sysctl -n hw.ncpu)
         
       - name: Create DMG
@@ -50,31 +52,39 @@ jobs:
         with:
           version: '6.6.*'
           modules: 'qtcharts'
-          arch: 'win64_mingw'
+          arch: 'win64_msvc2019_64'
+          
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
           
       - name: Configure CMake
         working-directory: SLS_ThermoCalc
+        shell: cmd
         run: |
-          mkdir build
-          cd build
-          cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          if exist build rmdir /s /q build
+          mkdir build\release
+          cd build\release
+          cmake ..\.. -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release
           
       - name: Build
-        working-directory: SLS_ThermoCalc/build
-        run: cmake --build . --config Release -j4
+        working-directory: SLS_ThermoCalc/build/release
+        shell: cmd
+        run: cmake --build . --config Release
         
       - name: Deploy Qt
         working-directory: SLS_ThermoCalc
+        shell: cmd
         run: |
-          mkdir -p release
-          cp bin/SLS_ThermoCalc.exe release/
-          windeployqt release/SLS_ThermoCalc.exe
-          cp -r presets release/
+          mkdir release
+          copy bin\SLS_ThermoCalc.exe release\
+          windeployqt release\SLS_ThermoCalc.exe
+          xcopy presets release\presets\ /E /I
           
       - name: Create ZIP
         working-directory: SLS_ThermoCalc
+        shell: pwsh
         run: |
-          Compress-Archive -Path release/* -DestinationPath SLS_ThermoCalc-Windows.zip
+          Compress-Archive -Path release\* -DestinationPath SLS_ThermoCalc-Windows.zip
           
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
