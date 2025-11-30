@@ -153,16 +153,15 @@ QStringList MainWindow::getPresetsFolderPaths() {
     // 可能的预设文件夹路径
     QString appDir = QCoreApplication::applicationDirPath();
     
-    // macOS: app/Contents/MacOS -> 向上三级到 SLS_ThermoCalc
-    paths << appDir + "/../../../presets";
+    // macOS: app在 bin/SLS_ThermoCalc.app/Contents/MacOS 中
+    // 需要向上4级到 SLS_ThermoCalc，然后找 presets
+    paths << appDir + "/../../../../presets";  // bin/xxx.app/Contents/MacOS -> SLS_ThermoCalc/presets
+    paths << appDir + "/../../../presets";     // 备用路径
     paths << appDir + "/../../presets";
     paths << appDir + "/../presets";
     paths << appDir + "/presets";
     
-    // Windows: 直接在可执行文件旁边
-    paths << appDir + "/presets";
-    
-    // 开发时的路径
+    // 开发时的路径 (从 build 目录运行)
     paths << QDir::currentPath() + "/presets";
     paths << QDir::currentPath() + "/../presets";
     
