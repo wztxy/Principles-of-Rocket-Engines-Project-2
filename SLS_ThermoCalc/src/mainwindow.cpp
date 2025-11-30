@@ -25,39 +25,45 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow() { delete ui; }
 
 void MainWindow::setupUI() {
-    // 设置表格列宽
-    ui->tableChamber->setColumnWidth(0, 200);
-    ui->tableChamber->setColumnWidth(1, 200);
+    // 设置表格列宽 - 优化显示效果
+    ui->tableChamber->setColumnWidth(0, 280);
+    ui->tableChamber->setColumnWidth(1, 180);
     ui->tableChamber->horizontalHeader()->setStretchLastSection(true);
+    ui->tableChamber->verticalHeader()->setVisible(false);
+    ui->tableChamber->setFrameShape(QFrame::NoFrame);
 
-    ui->tableNozzle->setColumnWidth(0, 200);
-    ui->tableNozzle->setColumnWidth(1, 200);
+    ui->tableNozzle->setColumnWidth(0, 280);
+    ui->tableNozzle->setColumnWidth(1, 180);
     ui->tableNozzle->horizontalHeader()->setStretchLastSection(true);
+    ui->tableNozzle->verticalHeader()->setVisible(false);
+    ui->tableNozzle->setFrameShape(QFrame::NoFrame);
 
-    ui->tableSpecies->setColumnWidth(0, 100);
-    ui->tableSpecies->setColumnWidth(1, 150);
-    ui->tableSpecies->setColumnWidth(2, 150);
+    ui->tableSpecies->setColumnWidth(0, 120);
+    ui->tableSpecies->setColumnWidth(1, 180);
+    ui->tableSpecies->setColumnWidth(2, 180);
     ui->tableSpecies->horizontalHeader()->setStretchLastSection(true);
+    ui->tableSpecies->verticalHeader()->setVisible(false);
+    ui->tableSpecies->setFrameShape(QFrame::NoFrame);
 
-    // 初始化燃烧室结果表
-    QStringList chamberParams = {"燃烧温度 (K)",
-                                 "总焓 (kJ/kg)",
-                                 "总熵 (kJ/(kg·K))",
-                                 "平均分子量 (g/mol)",
-                                 "密度 (kg/m³)",
-                                 "定压比热 Cp (kJ/(kg·K))",
-                                 "定容比热 Cv (kJ/(kg·K))",
-                                 "比热比 γ",
-                                 "等熵指数 γs",
-                                 "声速 (m/s)",
-                                 "特征速度 c* (m/s)",
-                                 "冻结比热 cp,f (kJ/kg/K)",
-                                 "冻结比热比 γf",
-                                 "冻结声速 (m/s)",
-                                 "气体常数 R (J/kg/K)",
-                                 "粘性系数 μ (Pa·s)",
-                                 "导热系数 λ (W/m/K)",
-                                 "普朗特数 Pr",
+    // 初始化燃烧室结果表 - 使用 Unicode 数学符号渲染单位
+    QStringList chamberParams = {"燃烧温度  Tᶜ  [K]",
+                                 "总焓  H  [kJ·kg⁻¹]",
+                                 "总熵  S  [kJ·kg⁻¹·K⁻¹]",
+                                 "平均分子量  M̄  [g·mol⁻¹]",
+                                 "密度  ρ  [kg·m⁻³]",
+                                 "定压比热  Cₚ  [kJ·kg⁻¹·K⁻¹]",
+                                 "定容比热  Cᵥ  [kJ·kg⁻¹·K⁻¹]",
+                                 "比热比  γ",
+                                 "等熵指数  γₛ",
+                                 "声速  a  [m·s⁻¹]",
+                                 "特征速度  c*  [m·s⁻¹]",
+                                 "冻结比热  cₚ,f  [kJ·kg⁻¹·K⁻¹]",
+                                 "冻结比热比  γf",
+                                 "冻结声速  aₓ  [m·s⁻¹]",
+                                 "气体常数  R  [J·kg⁻¹·K⁻¹]",
+                                 "粘性系数  μ  [Pa·s]",
+                                 "导热系数  λ  [W·m⁻¹·K⁻¹]",
+                                 "普朗特数  Pr",
                                  "收敛状态"};
 
     ui->tableChamber->setRowCount(chamberParams.size());
@@ -66,12 +72,22 @@ void MainWindow::setupUI() {
         ui->tableChamber->setItem(i, 1, new QTableWidgetItem("-"));
     }
 
-    // 初始化喷管结果表
-    QStringList nozzleParams = {"出口温度 (K)", "出口压强 (atm)", "出口速度 (m/s)", "比冲 Isp (s)",
-                                "真空比冲 Isp,vac (s)", "马赫数", "推力系数 Cf", 
-                                "质量流系数 Γ", "平均等熵指数 γm",
-                                "压力比 pc/pe", "出口密度 (kg/m³)", "出口声速 (m/s)",
-                                "喉部温度 (K)", "喉部压力 (atm)", "喉部速度 (m/s)",
+    // 初始化喷管结果表 - 使用 Unicode 数学符号渲染单位
+    QStringList nozzleParams = {"出口温度  Tₑ  [K]",
+                                "出口压强  pₑ  [atm]",
+                                "出口速度  vₑ  [m·s⁻¹]",
+                                "比冲  Iₛₚ  [s]",
+                                "真空比冲  Iₛₚ,ᵥₐc  [s]",
+                                "马赫数  Ma",
+                                "推力系数  Cf",
+                                "质量流系数  Γ",
+                                "平均等熵指数  γₘ",
+                                "压力比  pᶜ/pₑ",
+                                "出口密度  ρₑ  [kg·m⁻³]",
+                                "出口声速  aₑ  [m·s⁻¹]",
+                                "喉部温度  T*  [K]",
+                                "喉部压力  p*  [atm]",
+                                "喉部速度  v*  [m·s⁻¹]",
                                 "收敛状态"};
 
     ui->tableNozzle->setRowCount(nozzleParams.size());

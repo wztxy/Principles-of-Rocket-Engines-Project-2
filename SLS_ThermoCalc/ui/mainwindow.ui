@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>🚀 SLS Rocket Engine Thermodynamic Calculator</string>
+   <string>🚀 SLS 火箭发动机热力计算系统</string>
   </property>
   <property name="styleSheet">
    <string notr="true">
@@ -223,43 +223,58 @@ QPushButton#btnExport:hover {
                 stop:0 #50d8c8, stop:1 #40c8b8);
 }
 
-/* ===== 表格样式 ===== */
+/* ===== 表格样式 - 现代卡片风格 ===== */
 QTableWidget {
-    background-color: rgba(13, 21, 32, 0.95);
-    alternate-background-color: rgba(20, 30, 45, 0.6);
-    border: 1px solid rgba(30, 58, 95, 0.6);
-    border-radius: 10px;
-    gridline-color: rgba(30, 58, 95, 0.4);
+    background-color: transparent;
+    alternate-background-color: transparent;
+    border: none;
+    border-radius: 12px;
+    gridline-color: transparent;
     color: #e0e6ed;
-    font-size: 12px;
-    selection-background-color: rgba(0, 180, 216, 0.2);
+    font-size: 13px;
+    selection-background-color: transparent;
+    outline: none;
 }
 QTableWidget::item {
-    padding: 10px 8px;
-    border-bottom: 1px solid rgba(30, 58, 95, 0.3);
+    padding: 14px 16px;
+    margin: 4px 8px;
+    border: none;
+    border-radius: 10px;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(20, 35, 55, 0.85), stop:1 rgba(15, 28, 45, 0.9));
+}
+QTableWidget::item:alternate {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(25, 42, 65, 0.85), stop:1 rgba(18, 32, 52, 0.9));
 }
 QTableWidget::item:selected {
-    background-color: rgba(0, 180, 216, 0.15);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 rgba(0, 180, 216, 0.3), stop:1 rgba(0, 150, 199, 0.25));
+    border: 1px solid rgba(0, 180, 216, 0.5);
     color: #ffffff;
 }
-QTableWidget::item:hover {
-    background-color: rgba(0, 180, 216, 0.08);
+QTableWidget::item:hover:!selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(30, 50, 75, 0.9), stop:1 rgba(22, 38, 58, 0.95));
+    border: 1px solid rgba(0, 180, 216, 0.2);
 }
 QHeaderView::section {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #152535, stop:1 #0d1a28);
-    color: #00b4d8;
+                stop:0 rgba(0, 180, 216, 0.2), stop:1 rgba(0, 150, 199, 0.15));
+    color: #00d4f8;
     font-weight: bold;
-    font-size: 12px;
-    padding: 12px 8px;
+    font-size: 13px;
+    padding: 14px 16px;
     border: none;
-    border-bottom: 2px solid #00b4d8;
+    border-bottom: 2px solid rgba(0, 180, 216, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 QHeaderView::section:first {
-    border-top-left-radius: 10px;
+    border-top-left-radius: 12px;
 }
 QHeaderView::section:last {
-    border-top-right-radius: 10px;
+    border-top-right-radius: 12px;
 }
 
 /* ===== 文本编辑框样式 ===== */
@@ -501,7 +516,7 @@ QFrame#titleFrame {
           <item>
            <widget class="QLabel" name="lblTitle">
             <property name="text">
-             <string>🚀 Thermodynamic Calculator</string>
+             <string>🚀 热力计算系统</string>
             </property>
             <property name="styleSheet">
              <string>color: #00b4d8; font-size: 16px; font-weight: bold;</string>
@@ -511,7 +526,7 @@ QFrame#titleFrame {
           <item>
            <widget class="QLabel" name="lblSubtitle">
             <property name="text">
-             <string>Minimum Gibbs Free Energy Method</string>
+             <string>最小吉布斯自由能法 · Minimum Gibbs Free Energy</string>
             </property>
             <property name="styleSheet">
              <string>color: #5a7a9a; font-size: 11px; font-style: italic;</string>
@@ -525,7 +540,7 @@ QFrame#titleFrame {
        <item>
         <widget class="QGroupBox" name="groupEngine">
          <property name="title">
-          <string>🔧 Engine Selection</string>
+          <string>🔧 发动机选择</string>
          </property>
          <layout class="QVBoxLayout" name="engineLayout">
           <property name="spacing">
@@ -540,14 +555,14 @@ QFrame#titleFrame {
              </size>
             </property>
             <property name="toolTip">
-             <string>Select a preset engine configuration or use custom parameters</string>
+             <string>选择预设发动机配置或使用自定义参数</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="lblEngineInfo">
             <property name="text">
-             <string>Select preset engine or configure custom parameters</string>
+             <string>选择预设发动机或配置自定义参数</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -561,7 +576,7 @@ QFrame#titleFrame {
        <item>
         <widget class="QGroupBox" name="groupPropellant">
          <property name="title">
-          <string>⚗️ Propellant Parameters</string>
+          <string>⚗️ 推进剂参数</string>
          </property>
          <layout class="QGridLayout" name="propellantLayout">
           <property name="horizontalSpacing">
@@ -573,17 +588,17 @@ QFrame#titleFrame {
           <item row="0" column="0">
            <widget class="QLabel" name="lblMixtureRatio">
             <property name="text">
-             <string>Mixture Ratio (O/F)</string>
+             <string>混合比 O/F</string>
             </property>
             <property name="toolTip">
-             <string>Oxidizer to Fuel mass ratio</string>
+             <string>氧化剂与燃料质量比</string>
             </property>
            </widget>
           </item>
           <item row="0" column="1">
            <widget class="QDoubleSpinBox" name="spinMixtureRatio">
             <property name="toolTip">
-             <string>Typical: LOX/LH2 ≈ 6.0, LOX/CH4 ≈ 3.6</string>
+             <string>典型值: LOX/LH₂ ≈ 6.0, LOX/CH₄ ≈ 3.6</string>
             </property>
             <property name="minimum">
              <double>1.000000</double>
@@ -605,7 +620,7 @@ QFrame#titleFrame {
           <item row="1" column="0">
            <widget class="QLabel" name="lblOxidizer">
             <property name="text">
-             <string>Oxidizer Mass Frac</string>
+             <string>氧化剂质量分数</string>
             </property>
            </widget>
           </item>
@@ -622,7 +637,7 @@ QFrame#titleFrame {
           <item row="2" column="0">
            <widget class="QLabel" name="lblFuel">
             <property name="text">
-             <string>Fuel Mass Frac</string>
+             <string>燃料质量分数</string>
             </property>
            </widget>
           </item>
@@ -639,10 +654,10 @@ QFrame#titleFrame {
           <item row="3" column="0">
            <widget class="QLabel" name="lblInitialEnthalpy">
             <property name="text">
-             <string>Initial Enthalpy (kJ/kg)</string>
+             <string>初始焓  [kJ/kg]</string>
             </property>
             <property name="toolTip">
-             <string>Propellant initial enthalpy at reference temperature</string>
+             <string>推进剂在参考温度下的初始焓值</string>
             </property>
            </widget>
           </item>
@@ -669,7 +684,7 @@ QFrame#titleFrame {
        <item>
         <widget class="QGroupBox" name="groupChamber">
          <property name="title">
-          <string>🔥 Chamber Conditions</string>
+          <string>🔥 燃烧室参数</string>
          </property>
          <layout class="QGridLayout" name="chamberLayout">
           <property name="horizontalSpacing">
@@ -681,17 +696,17 @@ QFrame#titleFrame {
           <item row="0" column="0">
            <widget class="QLabel" name="lblChamberPressure">
             <property name="text">
-             <string>Chamber Pressure (MPa)</string>
+             <string>燃烧室压强  [MPa]</string>
             </property>
             <property name="toolTip">
-             <string>Combustion chamber total pressure</string>
+             <string>燃烧室总压</string>
             </property>
            </widget>
           </item>
           <item row="0" column="1">
            <widget class="QDoubleSpinBox" name="spinChamberPressure">
             <property name="toolTip">
-             <string>Typical: RS-25 ≈ 20.5 MPa, Raptor ≈ 30 MPa</string>
+             <string>典型值: RS-25 ≈ 20.5 MPa, Raptor ≈ 30 MPa</string>
             </property>
             <property name="minimum">
              <double>0.100000</double>
@@ -717,7 +732,7 @@ QFrame#titleFrame {
        <item>
         <widget class="QGroupBox" name="groupNozzle">
          <property name="title">
-          <string>🎯 Nozzle Conditions</string>
+          <string>🎯 喷管参数</string>
          </property>
          <layout class="QGridLayout" name="nozzleLayout">
           <property name="horizontalSpacing">
@@ -729,17 +744,17 @@ QFrame#titleFrame {
           <item row="0" column="0">
            <widget class="QLabel" name="lblExitPressure">
             <property name="text">
-             <string>Exit Pressure (atm)</string>
+             <string>出口压强  [atm]</string>
             </property>
             <property name="toolTip">
-             <string>Nozzle exit static pressure</string>
+             <string>喷管出口静压</string>
             </property>
            </widget>
           </item>
           <item row="0" column="1">
            <widget class="QDoubleSpinBox" name="spinExitPressure">
             <property name="toolTip">
-             <string>Lower values for vacuum-optimized nozzles</string>
+             <string>真空优化喷管使用更低的出口压强</string>
             </property>
             <property name="minimum">
              <double>0.001000</double>
@@ -779,7 +794,7 @@ QFrame#buttonFrame {
           <item>
            <widget class="QPushButton" name="btnCalculate">
             <property name="text">
-             <string>⚡ CALCULATE</string>
+             <string>⚡ 开始计算</string>
             </property>
             <property name="minimumSize">
              <size>
@@ -788,7 +803,7 @@ QFrame#buttonFrame {
              </size>
             </property>
             <property name="toolTip">
-             <string>Run thermodynamic calculation (Ctrl+Enter)</string>
+             <string>执行热力计算 (Ctrl+Enter)</string>
             </property>
            </widget>
           </item>
@@ -800,7 +815,7 @@ QFrame#buttonFrame {
             <item>
              <widget class="QPushButton" name="btnExport">
               <property name="text">
-               <string>📥 Export</string>
+               <string>📥 导出</string>
               </property>
               <property name="minimumSize">
                <size>
@@ -809,14 +824,14 @@ QFrame#buttonFrame {
                </size>
               </property>
               <property name="toolTip">
-               <string>Export results to file (Ctrl+E)</string>
+               <string>导出计算结果 (Ctrl+E)</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="btnClear">
               <property name="text">
-               <string>🗑️ Clear</string>
+               <string>🗑️ 清空</string>
               </property>
               <property name="minimumSize">
                <size>
@@ -825,7 +840,7 @@ QFrame#buttonFrame {
                </size>
               </property>
               <property name="toolTip">
-               <string>Clear all results</string>
+               <string>清空所有结果</string>
               </property>
              </widget>
             </item>
@@ -863,23 +878,23 @@ QFrame#buttonFrame {
       <!-- 燃烧室结果 -->
       <widget class="QWidget" name="tabChamber">
        <attribute name="title">
-        <string>🔥 Chamber</string>
+        <string>🔥 燃烧室</string>
        </attribute>
        <layout class="QVBoxLayout" name="chamberResultLayout">
         <property name="spacing">
-         <number>8</number>
+         <number>4</number>
         </property>
         <property name="leftMargin">
-         <number>8</number>
-        </property>
-        <property name="topMargin">
          <number>12</number>
         </property>
+        <property name="topMargin">
+         <number>16</number>
+        </property>
         <property name="rightMargin">
-         <number>8</number>
+         <number>12</number>
         </property>
         <property name="bottomMargin">
-         <number>8</number>
+         <number>12</number>
         </property>
         <item>
          <widget class="QTableWidget" name="tableChamber">
@@ -901,14 +916,17 @@ QFrame#buttonFrame {
           <property name="selectionMode">
            <enum>QAbstractItemView::SingleSelection</enum>
           </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
           <column>
            <property name="text">
-            <string>Parameter</string>
+            <string>参数</string>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>Value</string>
+            <string>数值</string>
            </property>
           </column>
          </widget>
@@ -918,23 +936,23 @@ QFrame#buttonFrame {
       <!-- 喷管结果 -->
       <widget class="QWidget" name="tabNozzle">
        <attribute name="title">
-        <string>🎯 Nozzle</string>
+        <string>🎯 喷管</string>
        </attribute>
        <layout class="QVBoxLayout" name="nozzleResultLayout">
         <property name="spacing">
-         <number>8</number>
+         <number>4</number>
         </property>
         <property name="leftMargin">
-         <number>8</number>
-        </property>
-        <property name="topMargin">
          <number>12</number>
         </property>
+        <property name="topMargin">
+         <number>16</number>
+        </property>
         <property name="rightMargin">
-         <number>8</number>
+         <number>12</number>
         </property>
         <property name="bottomMargin">
-         <number>8</number>
+         <number>12</number>
         </property>
         <item>
          <widget class="QTableWidget" name="tableNozzle">
@@ -953,14 +971,17 @@ QFrame#buttonFrame {
           <property name="selectionMode">
            <enum>QAbstractItemView::SingleSelection</enum>
           </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
           <column>
            <property name="text">
-            <string>Parameter</string>
+            <string>参数</string>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>Value</string>
+            <string>数值</string>
            </property>
           </column>
          </widget>
@@ -970,23 +991,23 @@ QFrame#buttonFrame {
       <!-- 组分详情 -->
       <widget class="QWidget" name="tabSpecies">
        <attribute name="title">
-        <string>⚛️ Species</string>
+        <string>⚛️ 组分</string>
        </attribute>
        <layout class="QVBoxLayout" name="speciesLayout">
         <property name="spacing">
-         <number>8</number>
+         <number>4</number>
         </property>
         <property name="leftMargin">
-         <number>8</number>
-        </property>
-        <property name="topMargin">
          <number>12</number>
         </property>
+        <property name="topMargin">
+         <number>16</number>
+        </property>
         <property name="rightMargin">
-         <number>8</number>
+         <number>12</number>
         </property>
         <property name="bottomMargin">
-         <number>8</number>
+         <number>12</number>
         </property>
         <item>
          <widget class="QTableWidget" name="tableSpecies">
@@ -1002,19 +1023,22 @@ QFrame#buttonFrame {
           <property name="selectionMode">
            <enum>QAbstractItemView::SingleSelection</enum>
           </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
           <column>
            <property name="text">
-            <string>Species</string>
+            <string>组分</string>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>Chamber (mol/kg)</string>
+            <string>燃烧室 [mol/kg]</string>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>Exit (mol/kg)</string>
+            <string>出口 [mol/kg]</string>
            </property>
           </column>
          </widget>
@@ -1024,23 +1048,23 @@ QFrame#buttonFrame {
       <!-- 日志 -->
       <widget class="QWidget" name="tabLog">
        <attribute name="title">
-        <string>📋 Log</string>
+        <string>📋 日志</string>
        </attribute>
        <layout class="QVBoxLayout" name="logLayout">
         <property name="spacing">
          <number>8</number>
         </property>
         <property name="leftMargin">
-         <number>8</number>
-        </property>
-        <property name="topMargin">
          <number>12</number>
         </property>
+        <property name="topMargin">
+         <number>16</number>
+        </property>
         <property name="rightMargin">
-         <number>8</number>
+         <number>12</number>
         </property>
         <property name="bottomMargin">
-         <number>8</number>
+         <number>12</number>
         </property>
         <item>
          <widget class="QTextEdit" name="textLog">
@@ -1048,7 +1072,7 @@ QFrame#buttonFrame {
            <bool>true</bool>
           </property>
           <property name="placeholderText">
-           <string>Calculation log will appear here...</string>
+           <string>计算日志将显示在这里...</string>
           </property>
          </widget>
         </item>
@@ -1069,7 +1093,7 @@ QFrame#buttonFrame {
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>文件</string>
     </property>
     <addaction name="actionImport"/>
     <addaction name="actionExport"/>
@@ -1080,7 +1104,7 @@ QFrame#buttonFrame {
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>帮助</string>
     </property>
     <addaction name="actionAbout"/>
     <addaction name="actionAboutQt"/>
@@ -1091,7 +1115,7 @@ QFrame#buttonFrame {
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionImport">
    <property name="text">
-    <string>Import Preset...</string>
+    <string>导入预设...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -1099,7 +1123,7 @@ QFrame#buttonFrame {
   </action>
   <action name="actionExport">
    <property name="text">
-    <string>Export Preset...</string>
+    <string>导出预设...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -1107,7 +1131,7 @@ QFrame#buttonFrame {
   </action>
   <action name="actionExportResults">
    <property name="text">
-    <string>Export Results...</string>
+    <string>导出结果...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
@@ -1115,7 +1139,7 @@ QFrame#buttonFrame {
   </action>
   <action name="actionExit">
    <property name="text">
-    <string>Exit</string>
+    <string>退出</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
@@ -1123,12 +1147,12 @@ QFrame#buttonFrame {
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About...</string>
+    <string>关于...</string>
    </property>
   </action>
   <action name="actionAboutQt">
    <property name="text">
-    <string>About Qt...</string>
+    <string>关于 Qt...</string>
    </property>
   </action>
  </widget>
