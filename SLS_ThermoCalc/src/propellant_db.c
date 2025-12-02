@@ -141,7 +141,7 @@ static void init_rs25_config_internal(PropellantInput* input)
     input->Aij[0][5] = 1.0; input->Aij[1][5] = 1.0;
     
     input->chamber_pressure = 202.0;
-    input->initial_enthalpy = -987000.0;
+    input->initial_enthalpy = -1685000.0;  /* J/kg */
     input->initial_temperature = 298.15;
 }
 
@@ -152,6 +152,7 @@ void init_rs25_config(PropellantInput* input) {
 void init_rl10_config(PropellantInput* input) {
     init_rs25_config_internal(input);
     input->chamber_pressure = 43.4;
+    input->initial_enthalpy = -987000.0;  /* J/kg, RL-10 uses -987 kJ/kg */
     input->mass_fraction[0] = 0.1453;
     input->mass_fraction[1] = 0.8547;
 }
@@ -352,8 +353,7 @@ void get_initial_guess(EngineType engine_type, double c_init[MAX_SPECIES], int n
     int i;
     for (i = 0; i < MAX_SPECIES; i++) c_init[i] = 1e-7;
     
-    if ((engine_type == ENGINE_RS25 || engine_type == ENGINE_RL10 || 
-         engine_type == ENGINE_J2X) && num_species >= 6) {
+    if ((engine_type == ENGINE_RS25 || engine_type == ENGINE_RL10) && num_species >= 6) {
         /* LOX/LH2: H, H2, H2O, O, O2, OH */
         c_init[0] = 1e-3; c_init[1] = 10.0; c_init[2] = 30.0;
         c_init[3] = 1e-4; c_init[4] = 1e-3; c_init[5] = 1.0;
@@ -367,7 +367,7 @@ void get_initial_guess(EngineType engine_type, double c_init[MAX_SPECIES], int n
     }
 }
 
-static EnginePreset g_presets[5];
+static EnginePreset g_presets[4];
 static int g_presets_initialized = 0;
 
 static void init_presets(void) {
@@ -389,30 +389,21 @@ static void init_presets(void) {
     g_presets[1].specific_impulse_vac = 465.5;
     init_rl10_config(&g_presets[1].config);
     
-    g_presets[2].name = "J-2X";
-    g_presets[2].description = "Exploration Upper Stage, LH2/LOX";
-    g_presets[2].chamber_pressure = 9.2;
-    g_presets[2].mixture_ratio = 5.5;
-    g_presets[2].thrust = 1307.0;
-    g_presets[2].specific_impulse_vac = 448.0;
-    init_rs25_config(&g_presets[2].config);
-    g_presets[2].config.chamber_pressure = 90.8;
+    g_presets[2].name = "Raptor";
+    g_presets[2].description = "SpaceX Full-Flow Staged Combustion, CH4/LOX";
+    g_presets[2].chamber_pressure = 30.0;
+    g_presets[2].mixture_ratio = 3.6;
+    g_presets[2].thrust = 2260.0;
+    g_presets[2].specific_impulse_vac = 363.0;
+    init_raptor_config(&g_presets[2].config);
     
-    g_presets[3].name = "Raptor";
-    g_presets[3].description = "SpaceX Full-Flow Staged Combustion, CH4/LOX";
-    g_presets[3].chamber_pressure = 30.0;
-    g_presets[3].mixture_ratio = 3.6;
-    g_presets[3].thrust = 2260.0;
-    g_presets[3].specific_impulse_vac = 363.0;
-    init_raptor_config(&g_presets[3].config);
-    
-    g_presets[4].name = "Custom";
-    g_presets[4].description = "User Defined Parameters";
-    g_presets[4].chamber_pressure = 10.0;
-    g_presets[4].mixture_ratio = 6.0;
-    g_presets[4].thrust = 0.0;
-    g_presets[4].specific_impulse_vac = 0.0;
-    init_rs25_config(&g_presets[4].config);
+    g_presets[3].name = "Custom";
+    g_presets[3].description = "User Defined Parameters";
+    g_presets[3].chamber_pressure = 10.0;
+    g_presets[3].mixture_ratio = 6.0;
+    g_presets[3].thrust = 0.0;
+    g_presets[3].specific_impulse_vac = 0.0;
+    init_rs25_config(&g_presets[3].config);
     
     g_presets_initialized = 1;
 }
@@ -425,6 +416,6 @@ const EnginePreset* get_engine_preset(EngineType type) {
 
 const EnginePreset* get_all_presets(int* count) {
     init_presets();
-    *count = 5;
+    *count = 4;
     return g_presets;
 }

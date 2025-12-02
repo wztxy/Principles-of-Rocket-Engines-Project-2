@@ -5,7 +5,7 @@
             "units": "MPa",
             "value": 20.64
         },
-        "initialEnthalpy_kJ_kg": -987,
+        "initialEnthalpy_kJ_kg": -1685,
         "mixtureRatio": 6.03
     },
     "engineDefinition": {

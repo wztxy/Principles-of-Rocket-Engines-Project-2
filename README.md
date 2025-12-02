@@ -15,9 +15,9 @@ SLS ThermoCalc 是一个基于 Qt 开发的火箭发动机热力性能计算程�
 
 - **燃烧室计算**：基于最小吉布斯自由能法求解化学平衡组分和绝热火焰温度
 - **喷管计算**：等熵膨胀过程，计算喷管出口参数和性能指标
-- **输运性质**：粘性系数、导热系数、普朗特数（Wilke/Eucken混合规则）
-- **多种发动机预设**：RS-25 (SSME)、RL-10B2、J-2X、Raptor、Vulcain-2、YF-77
-- **多推进剂支持**：LOX/LH₂（6种产物）、LOX/CH₄（8种产物）
+- **输运性质**：粘性系数、导热系数、普朗特数（Wilke/Eucken 混合规则）
+- **多种发动机预设**：RS-25 (SSME)、RL-10B2、Raptor、YF-77
+- **多推进剂支持**：LOX/LH₂（6 种产物）、LOX/CH₄（8 种产物）
 - **完整输出**：比冲、特征速度、推力系数、马赫数、比热比等
 
 ## 编译与运行
@@ -99,46 +99,18 @@ Principles-of-Rocket-Engines-Project-2/
 - **高温稳定性**：采用负幂次项（T⁻², T⁻¹），避免 7 系数格式的高温外推误差
 - **数据来源**：Cox,1989 (H₂O); Gurvich,1978 (H₂, O₂); Ruscic,2002 (OH)
 
-详细公式推导见 `doc/PROJECT_REPORT.md` 和 `references/公式、报告/热力计算流程及公式.tex`。
-
-## 发动机预设
-
-| 发动机       | 推进剂  | 燃烧室压强 | 混合比 O/F | 真空比冲 | 推力     |
-| ------------ | ------- | ---------- | ---------- | -------- | -------- |
-| RS-25 (SSME) | LOX/LH₂ | 20.64 MPa  | 6.03       | 452 s    | 2,279 kN |
-| RL-10B2      | LOX/LH₂ | 4.36 MPa   | 5.88       | 466 s    | 110 kN   |
-| J-2X         | LOX/LH₂ | 9.2 MPa    | 5.5        | 448 s    | 1,307 kN |
-| Raptor       | LOX/CH₄ | 30 MPa     | 3.6        | 363 s    | 2,260 kN |
-| Vulcain-2    | LOX/LH₂ | 11.7 MPa   | 6.1        | 434 s    | 1,359 kN |
-| YF-77        | LOX/LH₂ | 10.1 MPa   | 5.5        | 430 s    | 700 kN   |
-
-## 计算精度
-
-与专业软件 RPA 对比（RS-25 条件）：
-
-| 参数 | 本程序 | RPA | 误差 |
-|------|--------|-----|------|
-| 燃烧温度 | 3589 K | 3588 K | 0.03% |
-| 特征速度 c* | 2361 m/s | 2360 m/s | 0.04% |
-| 真空比冲 | 451 s | 452 s | 0.22% |
-
-## 文档
-
-- [完整项目报告](doc/PROJECT_REPORT.md) - 理论基础、算法实现、误差分析
-- [PPT 报告内容](doc/PPT_报告内容.md) - 演示用内容，包含架构图和流程图
-
 ## 许可证
 
 本项目采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可证。
 
-## 致谢
+## 参考
 
-- NASA CEA (Chemical Equilibrium with Applications) 热力数据
-- RPA (Rocket Propulsion Analysis) 软件参考
+- NASA CEA (Chemical Equilibrium with Applications) 数据
+- RPA (Rocket Propulsion Analysis) 数据
 - Qt 开源框架
 
 ---
 
 _本项目为北京航空航天大学宇航学院宇航推进系火箭发动机原理课程大作业_
 
-_版本：v1.0.0 | 2025年12月_
+_版本：v1.0.0 | 2025 年 12 月_

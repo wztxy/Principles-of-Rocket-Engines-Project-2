@@ -20,7 +20,7 @@ references/                    # 📚 参考资料文件夹
 SLS_ThermoCalc/
 ├── include/               # C语言头文件
 │   ├── thermo_core.h     # 热力计算核心API
-│   ├── propellant_db.h   # 推进剂数据库（RS-25/RL-10/J-2X预设）
+│   ├── propellant_db.h   # 推进剂数据库（RS-25/RL-10/Raptor预设）
 │   ├── matrix_solver.h   # 高斯消元求解器
 │   └── constants.h       # 物理常数
 ├── src/                   # 源文件
@@ -29,6 +29,11 @@ SLS_ThermoCalc/
 │   ├── matrix_solver.c   # 矩阵求解
 │   ├── mainwindow.cpp    # Qt主窗口
 │   └── main.cpp          # 程序入口
+├── presets/               # 发动机预设配置
+│   ├── RS-25_SSME.json   # RS-25 (初始焓 -1685 kJ/kg)
+│   ├── RL-10B2.json      # RL-10B2 (初始焓 -987 kJ/kg)
+│   ├── Raptor.json       # SpaceX Raptor
+│   └── YF-77.json        # YF-77
 └── ui/mainwindow.ui      # Qt Designer界面文件
 ```
 
@@ -124,8 +129,8 @@ make -j4
 或使用 Qt Creator 打开 `SLS_ThermoCalc.pro` 直接运行。
 
 ### GUI 界面功能
-- 🚀 发动机选择（RS-25/RL-10/J-2X/自定义）
-- ⚗️ 推进剂参数配置（混合比、初始焓）
-- 🔥 燃烧室计算结果（温度、组分、比热比）
-- 🎯 喷管计算结果（比冲、马赫数、推力系数）
+- 🚀 发动机选择（RS-25/RL-10/Raptor/YF-77/自定义）
+- ⚗️ 推进剂参数配置（混合比）
+- 🔥 燃烧室计算结果（燃烧室温度、燃烧产物平均摩尔质量、燃烧产物平均密度、产物等价气体常数、平衡声速、比热比等）
+- 🎯 喷管计算结果（燃气速度、真空比冲、马赫数、推力系数等）
 - 📥 结果导出功能

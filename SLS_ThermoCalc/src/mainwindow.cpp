@@ -54,25 +54,24 @@ void MainWindow::setupUI() {
     ui->tableSpecies->verticalHeader()->setDefaultSectionSize(36);
 
     // 初始化燃烧室结果表 - 简洁格式，单位用括号
-    QStringList chamberParams = {"燃烧温度 Tc (K)",
+    QStringList chamberParams = {"燃烧室温度 Tc (K)",
                                  "总焓 H (kJ/kg)",
                                  "总熵 S (kJ/kg/K)",
-                                 "平均分子量 M (g/mol)",
-                                 "密度 ρ (kg/m³)",
+                                 "燃烧产物平均摩尔质量 (g/mol)",
+                                 "燃烧产物平均密度 (kg/m³)",
                                  "定压比热 Cp (kJ/kg/K)",
                                  "定容比热 Cv (kJ/kg/K)",
                                  "比热比 γ",
                                  "等熵指数 γs",
-                                 "声速 a (m/s)",
+                                 "平衡声速 (m/s)",
                                  "特征速度 c* (m/s)",
                                  "冻结比热 Cp,f (kJ/kg/K)",
                                  "冻结比热比 γf",
-                                 "冻结声速 af (m/s)",
-                                 "气体常数 R (J/kg/K)",
+                                 "冻结声速 (m/s)",
+                                 "产物等价气体常数 R (J/kg/K)",
                                  "粘性系数 μ (Pa·s)",
                                  "导热系数 λ (W/m/K)",
-                                 "普朗特数 Pr",
-                                 "收敛状态"};
+                                 "普朗特数 Pr"};
 
     ui->tableChamber->setRowCount(chamberParams.size());
     for (int i = 0; i < chamberParams.size(); ++i) {
@@ -83,9 +82,8 @@ void MainWindow::setupUI() {
     // 初始化喷管结果表 - 简洁格式，单位用括号
     QStringList nozzleParams = {"出口温度 Te (K)",
                                 "出口压强 pe (atm)",
-                                "出口速度 ve (m/s)",
-                                "比冲 Isp (s)",
-                                "真空比冲 Isp,vac (s)",
+                                "燃气速度 ue (m/s)",
+                                "真空比冲 Isp,vac (m/s)",
                                 "马赫数 Ma",
                                 "推力系数 Cf",
                                 "质量流系数 Γ",
@@ -95,8 +93,7 @@ void MainWindow::setupUI() {
                                 "出口声速 ae (m/s)",
                                 "喉部温度 T* (K)",
                                 "喉部压力 p* (atm)",
-                                "喉部速度 v* (m/s)",
-                                "收敛状态"};
+                                "喉部速度 v* (m/s)"};
 
     ui->tableNozzle->setRowCount(nozzleParams.size());
     for (int i = 0; i < nozzleParams.size(); ++i) {
@@ -333,11 +330,6 @@ void MainWindow::createDefaultPresets(const QString& presetsDir) {
         createPresetJson("RL-10B2", "Pratt & Whitney RL10B-2 - Upper Stage (LOX/LH2)",
                         110.1, 465.5, 4.36, 5.88, -987.0, "LOX_LH2", 0.001))) created++;
     
-    // J-2X - 探索上面级
-    if (writePreset("J-2X.json",
-        createPresetJson("J-2X", "Rocketdyne J-2X - Exploration Upper Stage (LOX/LH2)",
-                        1310, 448, 9.2, 5.5, -987.0, "LOX_LH2", 0.001))) created++;
-    
     // SpaceX Raptor (LOX/CH4)
     if (writePreset("Raptor.json",
         createPresetJson("SpaceX Raptor", "Full-Flow Staged Combustion Engine (LOX/CH4)",
@@ -347,11 +339,6 @@ void MainWindow::createDefaultPresets(const QString& presetsDir) {
     if (writePreset("YF-77.json",
         createPresetJson("YF-77", "长征五号芯一级发动机 (LOX/LH2)",
                         700, 430, 10.2, 5.5, -987.0, "LOX_LH2", 0.1))) created++;
-    
-    // Vulcain-2 - 阿丽亚娜5
-    if (writePreset("Vulcain-2.json",
-        createPresetJson("Vulcain-2", "Ariane 5 Core Stage Engine (LOX/LH2)",
-                        1350, 434, 11.7, 6.1, -987.0, "LOX_LH2", 0.05))) created++;
     
     ui->textLog->append(QString("[信息] 已创建 %1 个默认预设文件").arg(created));
 }
@@ -462,11 +449,7 @@ void MainWindow::onEngineChanged(int index) {
     // 加载预设文件
     if (loadPresetFromJson(preset.filePath)) {
         // 更新发动机信息显示
-        QString info = QString("%1\n推力: %2 kN, 真空比冲: %3 s")
-                           .arg(preset.description)
-                           .arg(preset.thrust_kN, 0, 'f', 1)
-                           .arg(preset.isp_vac, 0, 'f', 1);
-        ui->lblEngineInfo->setText(info);
+        ui->lblEngineInfo->setText(preset.description);
         
         // 记录日志
         ui->textLog->append(QString("[%1] 选择发动机: %2")
@@ -504,8 +487,7 @@ void MainWindow::readInputParameters() {
     double pc_mpa = ui->spinChamberPressure->value();
     m_currentConfig.chamber_pressure = pc_mpa / 0.101325;  // 1 atm = 0.101325 MPa
 
-    // 初始焓 (kJ/kg -> J/kg)
-    m_currentConfig.initial_enthalpy = ui->spinInitialEnthalpy->value() * 1000.0;
+    // 初始焓从预设配置保持不变（已在 onEngineChanged 中设置）
     
     // 更新质量分数
     double of_ratio = ui->spinMixtureRatio->value();
@@ -541,7 +523,7 @@ void MainWindow::onCalculate() {
         ui->textLog->append(
             QString("  ✓ 燃烧温度: %1 K").arg(m_lastResult.chamber.temperature, 0, 'f', 1));
         ui->textLog->append(
-            QString("  ✓ 比冲: %1 s").arg(m_lastResult.nozzle.specific_impulse, 0, 'f', 1));
+            QString("  ✓ 真空比冲: %1 m/s").arg(m_lastResult.nozzle.specific_impulse_vac * 9.80665, 0, 'f', 1));
         ui->textLog->append("[计算成功]");
     } else {
         m_hasResult = false;
@@ -622,7 +604,6 @@ void MainWindow::displayChamberResults(const ChamberResult& chamber) {
     setTableValue(row++, formatNumber(chamber.viscosity * 1e6, 4) + " ×10⁻⁶");
     setTableValue(row++, formatNumber(chamber.conductivity, 4));
     setTableValue(row++, formatNumber(chamber.prandtl, 4));
-    setTableValue(row++, chamber.converged ? "✓ 收敛" : "✗ 未收敛");
 }
 
 void MainWindow::displayNozzleResults(const NozzleResult& nozzle) {
@@ -640,9 +621,8 @@ void MainWindow::displayNozzleResults(const NozzleResult& nozzle) {
     int row = 0;
     setTableValue(row++, formatNumber(nozzle.exit_temperature, 2));
     setTableValue(row++, formatNumber(nozzle.exit_pressure, 4));
-    setTableValue(row++, formatNumber(nozzle.exit_velocity, 1));
-    setTableValue(row++, formatNumber(nozzle.specific_impulse, 1));
-    setTableValue(row++, formatNumber(nozzle.specific_impulse_vac, 1));
+    setTableValue(row++, formatNumber(nozzle.exit_velocity, 1));  /* 燃气速度 */
+    setTableValue(row++, formatNumber(nozzle.specific_impulse_vac * 9.80665, 1));  /* m/s = s × g₀ */
     setTableValue(row++, formatNumber(nozzle.mach_number, 2));
     setTableValue(row++, formatNumber(nozzle.thrust_coefficient, 4));
     setTableValue(row++, formatNumber(nozzle.mass_flow_coefficient, 4));
@@ -653,7 +633,6 @@ void MainWindow::displayNozzleResults(const NozzleResult& nozzle) {
     setTableValue(row++, formatNumber(nozzle.throat_temperature, 2));
     setTableValue(row++, formatNumber(nozzle.throat_pressure, 4));
     setTableValue(row++, formatNumber(nozzle.throat_velocity, 1));
-    setTableValue(row++, nozzle.converged ? "✓ 收敛" : "✗ 未收敛");
 }
 
 void MainWindow::onExportResults() {
@@ -709,9 +688,8 @@ void MainWindow::onExportResults() {
     out << "【喷管性能参数】\n";
     out << QString("出口温度 Te: %1 K\n").arg(m_lastResult.nozzle.exit_temperature, 0, 'f', 2);
     out << QString("出口压力 pe: %1 atm\n").arg(m_lastResult.nozzle.exit_pressure, 0, 'f', 4);
-    out << QString("出口速度 ue: %1 m/s\n").arg(m_lastResult.nozzle.exit_velocity, 0, 'f', 1);
-    out << QString("比冲 Isp: %1 s\n").arg(m_lastResult.nozzle.specific_impulse, 0, 'f', 1);
-    out << QString("真空比冲 Isp,vac: %1 s\n").arg(m_lastResult.nozzle.specific_impulse_vac, 0, 'f', 1);
+    out << QString("燃气速度 ue: %1 m/s\n").arg(m_lastResult.nozzle.exit_velocity, 0, 'f', 1);
+    out << QString("真空比冲 Isp,vac: %1 m/s\n").arg(m_lastResult.nozzle.specific_impulse_vac * 9.80665, 0, 'f', 1);
     out << QString("马赫数 Me: %1\n").arg(m_lastResult.nozzle.mach_number, 0, 'f', 2);
     out << QString("推力系数 CF: %1\n").arg(m_lastResult.nozzle.thrust_coefficient, 0, 'f', 4);
     out << QString("质量流系数 Γ: %1\n").arg(m_lastResult.nozzle.mass_flow_coefficient, 0, 'f', 4);
@@ -785,7 +763,6 @@ void MainWindow::onAbout() {
         "<ul>"
         "<li>RS-25 (SSME) - SLS 核心级 [LOX/LH2]</li>"
         "<li>RL-10B2 - 上面级 [LOX/LH2]</li>"
-        "<li>J-2X - 探索上面级 [LOX/LH2]</li>"
         "<li>SpaceX Raptor - 全流量分级燃烧 [LOX/CH4]</li>"
         "</ul>"
         "<p style='margin-top: 15px;'>"
@@ -881,7 +858,7 @@ bool MainWindow::savePresetToJson(const QString& filename) {
     chamberPressure["units"] = "MPa";
     combustor["chamberPressure"] = chamberPressure;
     combustor["mixtureRatio"] = ui->spinMixtureRatio->value();
-    combustor["initialEnthalpy_kJ_kg"] = ui->spinInitialEnthalpy->value();
+    combustor["initialEnthalpy_kJ_kg"] = m_currentConfig.initial_enthalpy / 1000.0;
     root["combustorConditions"] = combustor;
     
     // 推进剂配置
@@ -1024,7 +1001,7 @@ bool MainWindow::loadPresetFromJson(const QString& filename) {
             ui->spinMixtureRatio->setValue(combustor["mixtureRatio"].toDouble());
         
         if (combustor.contains("initialEnthalpy_kJ_kg"))
-            ui->spinInitialEnthalpy->setValue(combustor["initialEnthalpy_kJ_kg"].toDouble());
+            m_currentConfig.initial_enthalpy = combustor["initialEnthalpy_kJ_kg"].toDouble() * 1000.0;
     }
     
     // 读取喷管条件

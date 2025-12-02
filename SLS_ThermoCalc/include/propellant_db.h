@@ -28,10 +28,7 @@ typedef enum {
 typedef enum {
     ENGINE_RS25,            /* RS-25 (SSME) - 液氢/液氧 */
     ENGINE_RL10,            /* RL-10 - 液氢/液氧 */
-    ENGINE_J2X,             /* J-2X - 液氢/液氧 */
     ENGINE_RAPTOR,          /* SpaceX Raptor - 甲烷/液氧 */
-    ENGINE_MERLIN,          /* SpaceX Merlin - 煤油/液氧 */
-    ENGINE_RD170,           /* RD-170 - 煤油/液氧 */
     ENGINE_CUSTOM           /* 自定义 */
 } EngineType;
 

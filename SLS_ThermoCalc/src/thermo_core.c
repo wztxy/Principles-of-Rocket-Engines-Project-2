@@ -422,14 +422,20 @@ void calc_thermo_properties(const PropellantInput* input,
         ng += moles[i];
     }
     
-    /* 计算各组分分子量并求总质量 */
+    /* 计算各组分分子量并求总质量 
+     * 单位说明:
+     * - element_weight[k]: g/mol (如 H = 1.00794)
+     * - M_i[i]: g/mol (组分分子量)
+     * - moles[i]: mol / kg推进剂
+     * - mass_total: (mol/kg) × (g/mol) = g/kg, 应该 ≈ 1000
+     */
     double M_i[MAX_SPECIES];
     for (i = 0; i < N; i++) {
         M_i[i] = 0.0;
         for (int k = 0; k < M; k++) {
             M_i[i] += input->element_weight[k] * input->Aij[k][i];
         }
-        mass_total += moles[i] * M_i[i];
+        mass_total += moles[i] * M_i[i];      /* g/kg */
         if (i < L) {
             mass_condensed += moles[i] * M_i[i];
         } else {
@@ -441,17 +447,26 @@ void calc_thermo_properties(const PropellantInput* input,
     result->condensed_mass_frac = mass_condensed / (mass_total > 0 ? mass_total : 1.0);
     result->gas_mass_frac = 1.0 - result->condensed_mass_frac;
     
-    /* 平均分子量 M_wm = 1/n_g (公式23) */
-    result->mean_molecular_weight = mass_total / (ng > 0 ? ng : 1) * 1000.0; /* g/mol */
+    /* 平均分子量 M_wm = mass_total / ng (公式23)
+     * 单位: (g/kg) / (mol/kg) = g/mol
+     */
+    result->mean_molecular_weight = mass_total / (ng > 0 ? ng : 1.0); /* g/mol */
     
     /* 气相平均分子量 M_wg (公式26) */
-    result->gas_molecular_weight = mass_gas / (ng > 0 ? ng : 1) * 1000.0; /* g/mol */
+    result->gas_molecular_weight = mass_gas / (ng > 0 ? ng : 1.0); /* g/mol */
     
-    /* 密度 (公式24) */
-    result->density = (p * ATM_TO_PA) / (ng * R_UNIVERSAL * T);
+    /* 密度 (公式24): ρ = p / (ng × R × T)
+     * 单位: Pa / ((mol/kg) × J/(mol·K) × K) = Pa·kg/J = kg/m³
+     * 注意: ng 是每kg推进剂的摩尔数，需要乘以1000转换为每g基准再计算
+     * 或者直接使用: ρ = p × M_wm / (R × T × 1000)
+     */
+    result->density = (p * ATM_TO_PA) * (result->mean_molecular_weight / 1000.0) / (R_UNIVERSAL * T);  /* kg/m³ */
     
-    /* 等价气体常数 R_m = R_0 * n_g (公式27) */
-    result->R_specific = R_UNIVERSAL * ng * 1000.0; /* J/(kg·K) */
+    /* 等价气体常数 R_m = R_0 / M_wm (公式27)
+     * 单位: J/(mol·K) / (kg/mol) = J/(kg·K)
+     * M_wm 需要转换为 kg/mol
+     */
+    result->R_specific = R_UNIVERSAL / (result->mean_molecular_weight / 1000.0); /* J/(kg·K) */
     
     /* 气相气体常数 R_g (公式28) */
     result->R_gas = R_UNIVERSAL / (result->gas_molecular_weight / 1000.0); /* J/(kg·K) */
@@ -488,8 +503,11 @@ void calc_thermo_properties(const PropellantInput* input,
     /* 冻结比热比 γ_f (公式37) */
     result->gamma_frozen = result->cp_frozen / result->cv_frozen;
     
-    /* 冻结声速 a_sf (公式38) */
-    result->sound_speed_frozen = sqrt(result->gamma_frozen * ng * R_UNIVERSAL * T);
+    /* 冻结声速 a_sf (公式38)
+     * a = sqrt(γ × R_specific × T)
+     * 单位: sqrt((无量纲) × J/(kg·K) × K) = sqrt(J/kg) = sqrt(m²/s²) = m/s
+     */
+    result->sound_speed_frozen = sqrt(result->gamma_frozen * result->R_specific * T);
     
     /* 计算偏微分用于平衡比热 */
     double dlnn_dlnT[MAX_SPECIES], dlnng_dlnT;
@@ -520,16 +538,19 @@ void calc_thermo_properties(const PropellantInput* input,
     /* 等熵指数 (公式33) */
     result->gamma_s = -result->gamma / dlnv_dlnp;
     
-    /* 平衡声速 (公式34) */
-    result->sound_speed = sqrt(result->gamma_s * ng * R_UNIVERSAL * T);
+    /* 平衡声速 (公式34)
+     * a = sqrt(γ_s × R_specific × T)
+     */
+    result->sound_speed = sqrt(result->gamma_s * result->R_specific * T);
     
-    /* 特征速度 (公式48-49) */
-    /* Γ = sqrt(γ × (2/(γ+1))^((γ+1)/(γ-1))) */
+    /* 特征速度 (公式48-49)
+     * Γ = sqrt(γ × (2/(γ+1))^((γ+1)/(γ-1)))
+     * c* = sqrt(R_specific × T) / Γ = sqrt(R_0 × T / M_w[kg/mol]) / Γ
+     */
     double gamma_s = result->gamma_s;
     double Gamma = sqrt(gamma_s * pow(2.0 / (gamma_s + 1.0), 
                         (gamma_s + 1.0) / (gamma_s - 1.0)));
-    /* c* = sqrt(T × R_0 / M_wm) / Γ */
-    result->char_velocity = sqrt(T * R_UNIVERSAL / (result->mean_molecular_weight / 1000.0)) / Gamma;
+    result->char_velocity = sqrt(result->R_specific * T) / Gamma;
     
     /* ============ 输运性质计算 (公式41-46) ============ */
     
@@ -547,7 +568,7 @@ void calc_thermo_properties(const PropellantInput* input,
         chi_i[i] = moles[i] / ng;
         
         /* 经验公式估算 sigma 和 epsilon/k */
-        double M_w = M_i[i] * 1000.0; /* g/mol */
+        double M_w = M_i[i]; /* g/mol (M_i 已经是 g/mol) */
         sigma[i] = 2.5 + 0.3 * pow(M_w, 0.333);  /* 近似 */
         eps_k[i] = 30.0 + 5.0 * M_w;  /* 近似 */
         
@@ -568,8 +589,8 @@ void calc_thermo_properties(const PropellantInput* input,
     for (i = L; i < N; i++) {
         double sum_phi = 0.0;
         for (j = L; j < N; j++) {
-            double M_wi = M_i[i] * 1000.0;
-            double M_wj = M_i[j] * 1000.0;
+            double M_wi = M_i[i];  /* g/mol */
+            double M_wj = M_i[j];  /* g/mol */
             double phi_ij = (1.0 / sqrt(8.0)) * pow(1.0 + M_wi / M_wj, -0.5) *
                            pow(1.0 + sqrt(mu_i[i] / mu_i[j]) * pow(M_wj / M_wi, 0.25), 2.0);
             sum_phi += chi_i[j] * phi_ij;
@@ -586,8 +607,7 @@ void calc_thermo_properties(const PropellantInput* input,
     /* 
      * 单位分析:
      * - μ_j [Pa·s] = [kg/(m·s)]
-     * - M_wj [g/mol] → 如果用g/mol，结果需要除以1000
-     * - 或者 M_wj [kg/mol] → 直接得到正确单位
+     * - M_wj [kg/mol] → 直接得到正确单位
      * - c_pmol,j [J/(mol·K)]
      * - R_0 [J/(mol·K)]
      * 
@@ -597,7 +617,7 @@ void calc_thermo_properties(const PropellantInput* input,
      */
     double lambda_i[MAX_SPECIES];
     for (i = L; i < N; i++) {
-        double M_w_kg = M_i[i];  /* kg/mol */
+        double M_w_kg = M_i[i] / 1000.0;  /* kg/mol (M_i 是 g/mol) */
         double cp_mol = calc_cp(&input->nasa9[i], T);  /* J/(mol·K) */
         
         /* 按LaTeX公式45计算，使用kg/mol作为分子量单位 */
@@ -616,9 +636,9 @@ void calc_thermo_properties(const PropellantInput* input,
             if (j == i) continue;  /* j ≠ i */
             if (chi_i[j] < 1e-10) continue;
             
-            double M_wi = M_i[i] * 1000.0;
-            double M_wj = M_i[j] * 1000.0;
-            /* Wilke 相互作用参数 φ_ij (公式43) */
+            double M_wi = M_i[i];  /* g/mol */
+            double M_wj = M_i[j];  /* g/mol */
+            /* Wilke 相互作用参数 φ_ij (公式43) - 分子量比值，单位无关 */
             double phi_ij = (1.0 / sqrt(8.0)) * pow(1.0 + M_wi / M_wj, -0.5) *
                            pow(1.0 + sqrt(mu_i[i] / mu_i[j]) * pow(M_wj / M_wi, 0.25), 2.0);
             sum_term += 1.065 * chi_i[j] / chi_i[i] * phi_ij;
@@ -948,19 +968,23 @@ int nozzle_calc_from_pressure(const PropellantInput* input,
     for (i = 0; i < N; i++) {
         M_i[i] = 0.0;
         for (int k = 0; k < input->num_elements; k++) {
-            M_i[i] += input->element_weight[k] * input->Aij[k][i];
+            M_i[i] += input->element_weight[k] * input->Aij[k][i];  /* g/mol */
         }
-        mass_exit += result->mole_fractions[i] * M_i[i];
+        mass_exit += result->mole_fractions[i] * M_i[i];  /* g/kg */
         if (i >= L) {
             ng_exit += result->mole_fractions[i];
         }
     }
     
-    /* 出口密度 (公式24) */
-    result->exit_density = (exit_pressure * ATM_TO_PA) / (ng_exit * R_UNIVERSAL * result->exit_temperature);
+    /* 出口平均分子量 */
+    double M_exit = mass_exit / (ng_exit > 0 ? ng_exit : 1.0);  /* g/mol */
+    double R_exit = R_UNIVERSAL / (M_exit / 1000.0);  /* J/(kg·K) */
     
-    /* 出口声速 (公式34) */
-    result->exit_sound_speed = sqrt(chamber->gamma_s * ng_exit * R_UNIVERSAL * result->exit_temperature);
+    /* 出口密度 (公式24): ρ = p × M / (R_0 × T) */
+    result->exit_density = (exit_pressure * ATM_TO_PA) * (M_exit / 1000.0) / (R_UNIVERSAL * result->exit_temperature);  /* kg/m³ */
+    
+    /* 出口声速 (公式34): a = sqrt(γ × R_specific × T) */
+    result->exit_sound_speed = sqrt(chamber->gamma_s * R_exit * result->exit_temperature);
     
     /* 马赫数 */
     result->mach_number = result->exit_velocity / result->exit_sound_speed;
@@ -975,10 +999,10 @@ int nozzle_calc_from_pressure(const PropellantInput* input,
                               pow(2.0 / (chamber->gamma_s + 1.0), 
                                   chamber->gamma_s / (chamber->gamma_s - 1.0));
     
-    /* 喉部速度 = 声速 (马赫数为1) */
-    double ng_throat = 0.0;
-    for (i = L; i < N; i++) ng_throat += chamber->mole_fractions[i];
-    result->throat_velocity = sqrt(chamber->gamma_s * ng_throat * R_UNIVERSAL * result->throat_temperature);
+    /* 喉部速度 = 声速 (马赫数为1)
+     * 使用燃烧室的 R_specific
+     */
+    result->throat_velocity = sqrt(chamber->gamma_s * chamber->R_specific * result->throat_temperature);
     
     /* ============ 平均等熵指数 (公式68-69) ============ */
     
@@ -1088,17 +1112,21 @@ int nozzle_calc_from_temperature(const PropellantInput* input,
     for (i = 0; i < N; i++) {
         M_i[i] = 0.0;
         for (int k = 0; k < input->num_elements; k++) {
-            M_i[i] += input->element_weight[k] * input->Aij[k][i];
+            M_i[i] += input->element_weight[k] * input->Aij[k][i];  /* g/mol */
         }
-        mass_exit += result->mole_fractions[i] * M_i[i];
+        mass_exit += result->mole_fractions[i] * M_i[i];  /* g/kg */
         if (i >= L) {
             ng += result->mole_fractions[i];
         }
     }
     
+    /* 出口平均分子量 */
+    double M_exit = mass_exit / (ng > 0 ? ng : 1.0);  /* g/mol */
+    double R_exit = R_UNIVERSAL / (M_exit / 1000.0);  /* J/(kg·K) */
+    
     /* 出口密度和声速 */
-    result->exit_density = (result->exit_pressure * ATM_TO_PA) / (ng * R_UNIVERSAL * exit_temperature);
-    result->exit_sound_speed = sqrt(chamber->gamma_s * ng * R_UNIVERSAL * exit_temperature);
+    result->exit_density = (result->exit_pressure * ATM_TO_PA) * (M_exit / 1000.0) / (R_UNIVERSAL * exit_temperature);  /* kg/m³ */
+    result->exit_sound_speed = sqrt(chamber->gamma_s * R_exit * exit_temperature);
     result->mach_number = result->exit_velocity / result->exit_sound_speed;
     
     /* 喉部参数 (冻结流动) */
@@ -1106,7 +1134,7 @@ int nozzle_calc_from_temperature(const PropellantInput* input,
     result->throat_pressure = input->chamber_pressure * 
                               pow(2.0 / (chamber->gamma_s + 1.0), 
                                   chamber->gamma_s / (chamber->gamma_s - 1.0));
-    result->throat_velocity = sqrt(chamber->gamma_s * ng * R_UNIVERSAL * result->throat_temperature);
+    result->throat_velocity = sqrt(chamber->gamma_s * chamber->R_specific * result->throat_temperature);
     
     /* 平均等熵指数 */
     result->mean_gamma = chamber->gamma_s;

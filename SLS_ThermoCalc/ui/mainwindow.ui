@@ -346,26 +346,6 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="lblInitialEnthalpy">
-            <property name="text">
-             <string>初始焓 (kJ/kg):</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QDoubleSpinBox" name="spinInitialEnthalpy">
-            <property name="minimum">
-             <double>-10000.000000</double>
-            </property>
-            <property name="maximum">
-             <double>10000.000000</double>
-            </property>
-            <property name="value">
-             <double>-987.000000</double>
-            </property>
-           </widget>
-          </item>
          </layout>
         </widget>
        </item>
