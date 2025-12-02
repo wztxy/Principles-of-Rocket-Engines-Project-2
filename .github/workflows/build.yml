@@ -3,29 +3,29 @@ name: Build Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 env:
-  QT_VERSION: '6.8.*'
+  QT_VERSION: "6.8.*"
 
 jobs:
   # ==================== macOS Apple Silicon (arm64) ====================
   build-macos-arm64:
-    runs-on: macos-14  # M1/M2 runner
+    runs-on: macos-14 # M1/M2 runner
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtcharts'
-          arch: 'clang_64'
-          
+          modules: "qtcharts"
+          arch: "clang_64"
+
       - name: Configure CMake
         working-directory: SLS_ThermoCalc
         run: |
@@ -33,11 +33,11 @@ jobs:
           mkdir -p build/release
           cd build/release
           cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
-          
+
       - name: Build
         working-directory: SLS_ThermoCalc/build/release
         run: cmake --build . --config Release -j$(sysctl -n hw.ncpu)
-        
+
       - name: Deploy Qt and Create DMG
         working-directory: SLS_ThermoCalc
         run: |
@@ -45,11 +45,11 @@ jobs:
           mkdir -p bin/SLS_ThermoCalc.app/Contents/Resources/presets
           cp -r presets/* bin/SLS_ThermoCalc.app/Contents/Resources/presets/
           mkdir -p bin/SLS_ThermoCalc.app/Contents/Resources/config
-          
+
           # 部署 Qt 框架
           macdeployqt bin/SLS_ThermoCalc.app -dmg
           mv bin/SLS_ThermoCalc.dmg SLS_ThermoCalc-macOS-arm64.dmg
-          
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -58,17 +58,17 @@ jobs:
 
   # ==================== macOS Intel (x86_64) ====================
   build-macos-x64:
-    runs-on: macos-13  # Intel runner
+    runs-on: macos-13 # Intel runner
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtcharts'
-          arch: 'clang_64'
-          
+          modules: "qtcharts"
+          arch: "clang_64"
+
       - name: Configure CMake
         working-directory: SLS_ThermoCalc
         run: |
@@ -76,21 +76,21 @@ jobs:
           mkdir -p build/release
           cd build/release
           cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
-          
+
       - name: Build
         working-directory: SLS_ThermoCalc/build/release
         run: cmake --build . --config Release -j$(sysctl -n hw.ncpu)
-        
+
       - name: Deploy Qt and Create DMG
         working-directory: SLS_ThermoCalc
         run: |
           mkdir -p bin/SLS_ThermoCalc.app/Contents/Resources/presets
           cp -r presets/* bin/SLS_ThermoCalc.app/Contents/Resources/presets/
           mkdir -p bin/SLS_ThermoCalc.app/Contents/Resources/config
-          
+
           macdeployqt bin/SLS_ThermoCalc.app -dmg
           mv bin/SLS_ThermoCalc.dmg SLS_ThermoCalc-macOS-x64.dmg
-          
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -102,17 +102,17 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtcharts'
-          arch: 'win64_msvc2022_64'
-          
+          modules: "qtcharts"
+          arch: "win64_msvc2022_64"
+
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
-          
+
       - name: Configure CMake
         working-directory: SLS_ThermoCalc
         shell: cmd
@@ -121,12 +121,12 @@ jobs:
           mkdir build\release
           cd build\release
           cmake ..\.. -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release
-          
+
       - name: Build
         working-directory: SLS_ThermoCalc/build/release
         shell: cmd
         run: cmake --build . --config Release
-        
+
       - name: Deploy Qt
         working-directory: SLS_ThermoCalc
         shell: cmd
@@ -136,13 +136,13 @@ jobs:
           windeployqt release\SLS_ThermoCalc.exe
           xcopy presets release\presets\ /E /I
           mkdir release\config
-          
+
       - name: Create ZIP
         working-directory: SLS_ThermoCalc
         shell: pwsh
         run: |
           Compress-Archive -Path release\* -DestinationPath SLS_ThermoCalc-Windows-x64.zip
-          
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -154,7 +154,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -172,13 +172,13 @@ jobs:
             libxcb-xfixes0 \
             libxcb-xinerama0 \
             libfuse2
-      
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
-          modules: 'qtcharts'
-          
+          modules: "qtcharts"
+
       - name: Configure CMake
         working-directory: SLS_ThermoCalc
         run: |
@@ -186,16 +186,16 @@ jobs:
           mkdir -p build/release
           cd build/release
           cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-          
+
       - name: Build
         working-directory: SLS_ThermoCalc/build/release
         run: cmake --build . --config Release -j$(nproc)
-        
+
       - name: Install linuxdeployqt
         run: |
           wget -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
           chmod +x linuxdeployqt-continuous-x86_64.AppImage
-          
+
       - name: Create AppImage
         working-directory: SLS_ThermoCalc
         run: |
@@ -204,10 +204,10 @@ jobs:
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
           mkdir -p AppDir/usr/share/SLS_ThermoCalc/presets
           mkdir -p AppDir/usr/share/SLS_ThermoCalc/config
-          
+
           cp bin/SLS_ThermoCalc AppDir/usr/bin/
           cp -r presets/* AppDir/usr/share/SLS_ThermoCalc/presets/
-          
+
           # 创建 desktop 文件
           cat > AppDir/usr/share/applications/SLS_ThermoCalc.desktop << EOF
           [Desktop Entry]
@@ -219,7 +219,7 @@ jobs:
           Categories=Science;Engineering;
           Terminal=false
           EOF
-          
+
           # 使用默认图标 (如果没有专用图标)
           cp /usr/share/icons/hicolor/256x256/apps/utilities-terminal.png \
              AppDir/usr/share/icons/hicolor/256x256/apps/SLS_ThermoCalc.png 2>/dev/null || \
@@ -227,20 +227,20 @@ jobs:
              -pointsize 48 -annotate 0 "SLS" \
              AppDir/usr/share/icons/hicolor/256x256/apps/SLS_ThermoCalc.png 2>/dev/null || \
           echo "Icon not created, continuing..."
-          
+
           cp AppDir/usr/share/applications/SLS_ThermoCalc.desktop AppDir/
-          
+
           # 创建 AppImage
           cd ..
           ./linuxdeployqt-continuous-x86_64.AppImage \
             SLS_ThermoCalc/AppDir/usr/share/applications/SLS_ThermoCalc.desktop \
             -appimage -no-translations \
             -extra-plugins=iconengines,platformthemes/libqgtk3.so || true
-          
+
           # 重命名 AppImage
           mv SLS_ThermoCalc*.AppImage SLS_ThermoCalc/SLS_ThermoCalc-Linux-x64.AppImage 2>/dev/null || \
           mv *.AppImage SLS_ThermoCalc/SLS_ThermoCalc-Linux-x64.AppImage 2>/dev/null || true
-          
+
       - name: Fallback to tar.gz if AppImage fails
         working-directory: SLS_ThermoCalc
         run: |
@@ -251,7 +251,7 @@ jobs:
             cp -r presets/* release/presets/
             tar -czvf SLS_ThermoCalc-Linux-x64.tar.gz -C release .
           fi
-          
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -271,17 +271,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          
+
       - name: List artifacts
         run: find artifacts -type f
-          
+
       - name: Prepare release files
         run: |
           mkdir -p release_files
           find artifacts -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.tar.gz" \) \
             -exec cp {} release_files/ \;
           ls -la release_files/
-          
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -291,25 +291,25 @@ jobs:
           generate_release_notes: true
           body: |
             ## 下载说明
-            
+
             | 平台 | 文件 | 说明 |
             |------|------|------|
-            | 🍎 macOS (Apple Silicon) | `SLS_ThermoCalc-macOS-arm64.dmg` | M1/M2/M3 芯片 Mac |
-            | 🍎 macOS (Intel) | `SLS_ThermoCalc-macOS-x64.dmg` | Intel 芯片 Mac |
-            | 🪟 Windows | `SLS_ThermoCalc-Windows-x64.zip` | Windows 10/11 64位 |
-            | 🐧 Linux | `SLS_ThermoCalc-Linux-x64.AppImage` | Ubuntu/Debian 等发行版 |
-            
+            | macOS (Apple Silicon) | `SLS_ThermoCalc-macOS-arm64.dmg` | M 芯片 Mac |
+            | macOS (Intel) | `SLS_ThermoCalc-macOS-x64.dmg` | Intel 芯片 Mac |
+            | Windows | `SLS_ThermoCalc-Windows-x64.zip` | Windows 10/11 64位 |
+            | Linux | `SLS_ThermoCalc-Linux-x64.AppImage` | Ubuntu/Debian 等发行版 |
+
             ### 安装说明
-            
+
             **macOS**: 
             1. 打开 DMG 文件
             2. 将应用拖到 Applications 文件夹
             3. 首次打开时右键选择"打开"以绕过 Gatekeeper
-            
+
             **Windows**:
             1. 解压 ZIP 文件
             2. 运行 `SLS_ThermoCalc.exe`
-            
+
             **Linux**:
             1. 赋予执行权限: `chmod +x SLS_ThermoCalc-Linux-x64.AppImage`
             2. 运行: `./SLS_ThermoCalc-Linux-x64.AppImage`
