@@ -16,33 +16,33 @@ extern "C" {
  * @brief 推进剂类型枚举
  */
 typedef enum {
-    PROPELLANT_LOX_LH2,     /* 液氧/液氢 (LOX/LH2) */
-    PROPELLANT_LOX_CH4,     /* 液氧/甲烷 (LOX/CH4) */
-    PROPELLANT_LOX_RP1,     /* 液氧/煤油 (LOX/RP-1) */
-    PROPELLANT_CUSTOM       /* 自定义 */
+    PROPELLANT_LOX_LH2, /* 液氧/液氢 (LOX/LH2) */
+    PROPELLANT_LOX_CH4, /* 液氧/甲烷 (LOX/CH4) */
+    PROPELLANT_LOX_RP1, /* 液氧/煤油 (LOX/RP-1) */
+    PROPELLANT_CUSTOM   /* 自定义 */
 } PropellantType;
 
 /**
  * @brief 预设发动机类型枚举
  */
 typedef enum {
-    ENGINE_RS25,            /* RS-25 (SSME) - 液氢/液氧 */
-    ENGINE_RL10,            /* RL-10 - 液氢/液氧 */
-    ENGINE_RAPTOR,          /* SpaceX Raptor - 甲烷/液氧 */
-    ENGINE_CUSTOM           /* 自定义 */
+    ENGINE_RS25,   /* RS-25 (SSME) - 液氢/液氧 */
+    ENGINE_RL10,   /* RL-10 - 液氢/液氧 */
+    ENGINE_RAPTOR, /* SpaceX Raptor - 甲烷/液氧 */
+    ENGINE_CUSTOM  /* 自定义 */
 } EngineType;
 
 /**
  * @brief 发动机预设配置结构体
  */
 typedef struct {
-    const char* name;                   /* 发动机名称 */
-    const char* description;            /* 描述 */
-    double chamber_pressure;            /* 燃烧室压强 (MPa) */
-    double mixture_ratio;               /* 混合比 O/F */
-    double thrust;                      /* 推力 (kN) */
-    double specific_impulse_vac;        /* 真空比冲 (s) */
-    PropellantInput config;             /* 详细配置 */
+    const char* name;            /* 发动机名称 */
+    const char* description;     /* 描述 */
+    double chamber_pressure;     /* 燃烧室压强 (MPa) */
+    double mixture_ratio;        /* 混合比 O/F */
+    double thrust;               /* 推力 (kN) */
+    double specific_impulse_vac; /* 真空比冲 (s) */
+    PropellantInput config;      /* 详细配置 */
 } EnginePreset;
 
 /**
@@ -88,9 +88,7 @@ void init_raptor_config(PropellantInput* input);
  * @param oxidizer_fraction 输出氧化剂质量分数
  * @param fuel_fraction 输出燃料质量分数
  */
-void calc_mass_fractions(double mixture_ratio, 
-                         double* oxidizer_fraction,
-                         double* fuel_fraction);
+void calc_mass_fractions(double mixture_ratio, double* oxidizer_fraction, double* fuel_fraction);
 
 /**
  * @brief 获取组分初始猜测值（用于迭代）
@@ -98,9 +96,7 @@ void calc_mass_fractions(double mixture_ratio,
  * @param c_init 输出初始组分数组
  * @param num_species 组分数
  */
-void get_initial_guess(EngineType engine_type, 
-                       double c_init[MAX_SPECIES],
-                       int num_species);
+void get_initial_guess(EngineType engine_type, double c_init[MAX_SPECIES], int num_species);
 
 #ifdef __cplusplus
 }
