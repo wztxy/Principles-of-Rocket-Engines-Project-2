@@ -224,6 +224,159 @@ QString MainWindow::ensurePresetsFolder() {
     return QString();
 }
 
+// 辅助函数：将 NASA 9 系数区间转换为 JSON 对象
+static QJsonObject nasa9IntervalToJson(const NASA9Interval& interval) {
+    QJsonObject obj;
+    obj["T_min"] = interval.T_min;
+    obj["T_max"] = interval.T_max;
+    QJsonArray coeffs;
+    for (int i = 0; i < NASA9_COEFF_NUM; i++) {
+        coeffs.append(interval.a[i]);
+    }
+    obj["coefficients"] = coeffs;
+    return obj;
+}
+
+// 辅助函数：将完整 PropellantInput 配置转换为 JSON
+static QByteArray propellantConfigToJson(const QString& name, const QString& desc, double thrust,
+                                         double isp, double pc_mpa, double of, double pe_atm,
+                                         const QString& propType, const PropellantInput& config,
+                                         const QStringList& speciesNames,
+                                         const QStringList& elementNames) {
+    QJsonObject root;
+    root["version"] = 2;  // 新版本号，表示包含完整热力数据
+    root["application"] = "SLS_ThermoCalc";
+
+    // 发动机定义
+    QJsonObject engine;
+    engine["name"] = name;
+    engine["description"] = desc;
+    engine["thrust_kN"] = thrust;
+    engine["specificImpulse_vac_s"] = isp;
+    root["engineDefinition"] = engine;
+
+    // 燃烧室条件
+    QJsonObject combustor;
+    QJsonObject pressure;
+    pressure["value"] = pc_mpa;
+    pressure["units"] = "MPa";
+    combustor["chamberPressure"] = pressure;
+    combustor["mixtureRatio"] = of;
+    combustor["initialEnthalpy_kJ_kg"] = config.initial_enthalpy / 1000.0;  // J/kg -> kJ/kg
+    root["combustorConditions"] = combustor;
+
+    // 推进剂类型
+    QJsonObject propellant;
+    propellant["type"] = propType;
+    QJsonObject ox, fuel;
+    ox["name"] = "O2(L)";
+    ox["formula"] = "O2";
+    propellant["oxidizer"] = ox;
+    if (propType == "LOX_CH4") {
+        fuel["name"] = "CH4(L)";
+        fuel["formula"] = "CH4";
+    } else {
+        fuel["name"] = "H2(L)";
+        fuel["formula"] = "H2";
+    }
+    propellant["fuel"] = fuel;
+    root["propellant"] = propellant;
+
+    // 喷管条件
+    QJsonObject nozzle;
+    nozzle["exitPressure_atm"] = pe_atm;
+    nozzle["flowType"] = "equilibrium";
+    root["nozzleConditions"] = nozzle;
+
+    // ========== 热力数据部分 (新增) ==========
+    QJsonObject thermoData;
+
+    // 基本配置
+    QJsonObject speciesConfig;
+    speciesConfig["numPropellants"] = config.num_propellants;
+    speciesConfig["numElements"] = config.num_elements;
+    speciesConfig["numSpecies"] = config.num_species;
+    speciesConfig["numCondensed"] = config.num_condensed;
+    thermoData["speciesConfig"] = speciesConfig;
+
+    // 元素原子量
+    QJsonArray elemWeights;
+    for (int i = 0; i < config.num_elements; i++) {
+        QJsonObject elem;
+        elem["name"] = (i < elementNames.size()) ? elementNames[i] : QString("E%1").arg(i);
+        elem["weight"] = config.element_weight[i];
+        elemWeights.append(elem);
+    }
+    thermoData["elementWeights"] = elemWeights;
+
+    // 组元-元素原子数矩阵 St_aij
+    QJsonArray stAij;
+    for (int p = 0; p < config.num_propellants; p++) {
+        QJsonArray row;
+        for (int e = 0; e < config.num_elements; e++) {
+            row.append(config.St_aij[p][e]);
+        }
+        stAij.append(row);
+    }
+    thermoData["St_aij"] = stAij;
+
+    // 质量分数
+    QJsonArray massFrac;
+    for (int p = 0; p < config.num_propellants; p++) {
+        massFrac.append(config.mass_fraction[p]);
+    }
+    thermoData["massFraction"] = massFrac;
+
+    // 产物-元素原子数矩阵 Aij
+    QJsonArray aij;
+    for (int e = 0; e < config.num_elements; e++) {
+        QJsonArray row;
+        for (int s = 0; s < config.num_species; s++) {
+            row.append(config.Aij[e][s]);
+        }
+        aij.append(row);
+    }
+    thermoData["Aij"] = aij;
+
+    // NASA 9 系数
+    QJsonArray nasa9Array;
+    for (int s = 0; s < config.num_species; s++) {
+        QJsonObject speciesObj;
+        speciesObj["name"] = (s < speciesNames.size()) ? speciesNames[s] : QString("S%1").arg(s);
+        speciesObj["numIntervals"] = config.nasa9[s].num_intervals;
+        QJsonArray intervals;
+        for (int i = 0; i < config.nasa9[s].num_intervals; i++) {
+            intervals.append(nasa9IntervalToJson(config.nasa9[s].intervals[i]));
+        }
+        speciesObj["intervals"] = intervals;
+        nasa9Array.append(speciesObj);
+    }
+    thermoData["nasa9Coefficients"] = nasa9Array;
+
+    // 初始迭代猜测值
+    QJsonArray initGuess;
+    double c_init[MAX_SPECIES];
+    if (propType == "LOX_CH4") {
+        get_initial_guess(ENGINE_RAPTOR, c_init, config.num_species);
+    } else {
+        get_initial_guess(ENGINE_RS25, c_init, config.num_species);
+    }
+    for (int s = 0; s < config.num_species; s++) {
+        initGuess.append(c_init[s]);
+    }
+    thermoData["initialGuess"] = initGuess;
+
+    root["thermoData"] = thermoData;
+
+    // 热力模型信息
+    QJsonObject thermoModel;
+    thermoModel["method"] = "minimumGibbsFreeEnergy";
+    thermoModel["coefficients"] = "NASA-9";
+    root["thermodynamicModel"] = thermoModel;
+
+    return QJsonDocument(root).toJson(QJsonDocument::Indented);
+}
+
 void MainWindow::createDefaultPresets(const QString& presetsDir) {
     // 定义必需的预设文件列表
     QStringList requiredPresets = {"RS-25_SSME.json", "RL-10B2.json", "Raptor.json", "YF-77.json"};
@@ -237,68 +390,20 @@ void MainWindow::createDefaultPresets(const QString& presetsDir) {
     }
 
     if (missingPresets.isEmpty()) {
-        // 所有必需的预设文件都存在
-        return;
+        return;  // 所有必需的预设文件都存在
     }
 
-    ui->textLog->append(QString("[信息] 检测到 %1 个预设文件缺失，正在创建...")
-                            .arg(missingPresets.size()));
+    ui->textLog->append(
+        QString("[信息] 检测到 %1 个预设文件缺失，正在创建...").arg(missingPresets.size()));
 
-    // 辅助函数：创建预设JSON
-    auto createPresetJson = [](const QString& name, const QString& desc, double thrust, double isp,
-                               double pc, double of, double enthalpy, const QString& propType,
-                               double pe) -> QByteArray {
-        QJsonObject root;
-        root["version"] = 1;
-        root["application"] = "SLS_ThermoCalc";
+    // 组分和元素名称
+    QStringList loxLh2Species = {"H", "H₂", "H₂O", "O", "O₂", "OH"};
+    QStringList loxLh2Elements = {"H", "O"};
+    QStringList loxCh4Species = {"H₂O", "H₂", "OH", "H", "CO₂", "CO", "O₂", "O"};
+    QStringList loxCh4Elements = {"H", "O", "C"};
 
-        QJsonObject engine;
-        engine["name"] = name;
-        engine["description"] = desc;
-        engine["thrust_kN"] = thrust;
-        engine["specificImpulse_vac_s"] = isp;
-        root["engineDefinition"] = engine;
-
-        QJsonObject combustor;
-        QJsonObject pressure;
-        pressure["value"] = pc;
-        pressure["units"] = "MPa";
-        combustor["chamberPressure"] = pressure;
-        combustor["mixtureRatio"] = of;
-        combustor["initialEnthalpy_kJ_kg"] = enthalpy;
-        root["combustorConditions"] = combustor;
-
-        QJsonObject propellant;
-        propellant["type"] = propType;
-        QJsonObject ox, fuel;
-        ox["name"] = "O2(L)";
-        ox["formula"] = "O2";
-        propellant["oxidizer"] = ox;
-        if (propType == "LOX_CH4") {
-            fuel["name"] = "CH4(L)";
-            fuel["formula"] = "CH4";
-        } else {
-            fuel["name"] = "H2(L)";
-            fuel["formula"] = "H2";
-        }
-        propellant["fuel"] = fuel;
-        root["propellant"] = propellant;
-
-        QJsonObject nozzle;
-        nozzle["exitPressure_atm"] = pe;
-        nozzle["flowType"] = "equilibrium";
-        root["nozzleConditions"] = nozzle;
-
-        QJsonObject thermo;
-        thermo["method"] = "minimumGibbsFreeEnergy";
-        thermo["coefficients"] = "NASA-9";
-        root["thermodynamicModel"] = thermo;
-
-        return QJsonDocument(root).toJson(QJsonDocument::Indented);
-    };
-
-    // 写入预设文件（仅当文件不存在时）
-    auto writePresetIfMissing = [&](const QString& filename, const QByteArray& content) {
+    // 写入预设文件的辅助函数
+    auto writePresetIfMissing = [&](const QString& filename, const QByteArray& content) -> bool {
         if (!missingPresets.contains(filename)) {
             return false;  // 文件已存在，跳过
         }
@@ -312,31 +417,70 @@ void MainWindow::createDefaultPresets(const QString& presetsDir) {
     };
 
     int created = 0;
+    PropellantInput config;
 
     // RS-25 (SSME) - SLS核心级
-    if (writePresetIfMissing(
-            "RS-25_SSME.json",
-            createPresetJson("RS-25 (SSME)", "Space Shuttle Main Engine - SLS Core Stage (LOX/LH2)",
-                             2279, 452.3, 20.64, 6.03, -1685.0, "LOX_LH2", 0.05)))
-        created++;
+    if (missingPresets.contains("RS-25_SSME.json")) {
+        init_rs25_config(&config);
+        config.initial_enthalpy = -1685000.0;  // J/kg
+        // 更新质量分数 O/F=6.03
+        double of = 6.03;
+        config.mass_fraction[0] = 1.0 / (1.0 + of);
+        config.mass_fraction[1] = of / (1.0 + of);
+        if (writePresetIfMissing(
+                "RS-25_SSME.json",
+                propellantConfigToJson("RS-25 (SSME)",
+                                       "Space Shuttle Main Engine - SLS Core Stage (LOX/LH2)", 2279,
+                                       452.3, 20.64, of, 0.05, "LOX_LH2", config, loxLh2Species,
+                                       loxLh2Elements)))
+            created++;
+    }
 
     // RL-10B2 - 上面级
-    if (writePresetIfMissing("RL-10B2.json",
-                    createPresetJson("RL-10B2", "Pratt & Whitney RL10B-2 - Upper Stage (LOX/LH2)",
-                                     110.1, 465.5, 4.36, 5.88, -996.0, "LOX_LH2", 0.001)))
-        created++;
+    if (missingPresets.contains("RL-10B2.json")) {
+        init_rl10_config(&config);
+        config.initial_enthalpy = -996000.0;  // J/kg
+        double of = 5.88;
+        config.mass_fraction[0] = 1.0 / (1.0 + of);
+        config.mass_fraction[1] = of / (1.0 + of);
+        if (writePresetIfMissing("RL-10B2.json",
+                                 propellantConfigToJson(
+                                     "RL-10B2", "Pratt & Whitney RL10B-2 - Upper Stage (LOX/LH2)",
+                                     110.1, 465.5, 4.36, of, 0.001, "LOX_LH2", config, loxLh2Species,
+                                     loxLh2Elements)))
+            created++;
+    }
 
     // SpaceX Raptor (LOX/CH4)
-    if (writePresetIfMissing(
-            "Raptor.json",
-            createPresetJson("SpaceX Raptor", "Full-Flow Staged Combustion Engine (LOX/CH4)", 2260,
-                             363, 30.0, 3.6, -2875.72, "LOX_CH4", 1.0)))
-        created++;
+    if (missingPresets.contains("Raptor.json")) {
+        init_raptor_config(&config);
+        config.initial_enthalpy = -2875720.0;  // J/kg
+        double of = 3.6;
+        config.mass_fraction[0] = 1.0 / (1.0 + of);
+        config.mass_fraction[1] = of / (1.0 + of);
+        if (writePresetIfMissing(
+                "Raptor.json",
+                propellantConfigToJson("SpaceX Raptor",
+                                       "Full-Flow Staged Combustion Engine (LOX/CH4)", 2260, 363,
+                                       30.0, of, 1.0, "LOX_CH4", config, loxCh4Species,
+                                       loxCh4Elements)))
+            created++;
+    }
 
     // YF-77 - 长征五号
-    if (writePresetIfMissing("YF-77.json", createPresetJson("YF-77", "长征五号芯一级发动机 (LOX/LH2)", 700,
-                                                   430, 10.2, 5.5, -1031.0, "LOX_LH2", 0.1)))
-        created++;
+    if (missingPresets.contains("YF-77.json")) {
+        init_rs25_config(&config);  // 基于 LOX/LH2 配置
+        config.initial_enthalpy = -1031000.0;  // J/kg
+        config.chamber_pressure = 100.0;       // atm
+        double of = 5.5;
+        config.mass_fraction[0] = 1.0 / (1.0 + of);
+        config.mass_fraction[1] = of / (1.0 + of);
+        if (writePresetIfMissing(
+                "YF-77.json",
+                propellantConfigToJson("YF-77", "长征五号芯一级发动机 (LOX/LH2)", 700, 430, 10.2, of,
+                                       0.1, "LOX_LH2", config, loxLh2Species, loxLh2Elements)))
+            created++;
+    }
 
     if (created > 0) {
         ui->textLog->append(QString("[信息] 已创建 %1 个缺失的预设文件").arg(created));
@@ -963,6 +1107,7 @@ bool MainWindow::loadPresetFromJson(const QString& filename) {
 
     QJsonObject root = doc.object();
     QString engineName;
+    int version = root["version"].toInt(1);
 
     // 读取发动机定义
     if (root.contains("engineDefinition")) {
@@ -971,11 +1116,11 @@ bool MainWindow::loadPresetFromJson(const QString& filename) {
             engineName = engineDef["name"].toString();
     }
 
-    // 读取燃烧室条件 (支持两种格式)
+    // 读取燃烧室条件
     if (root.contains("combustorConditions")) {
         QJsonObject combustor = root["combustorConditions"].toObject();
 
-        // 新格式: chamberPressure 是对象
+        // chamberPressure 可以是对象或数值
         if (combustor.contains("chamberPressure")) {
             QJsonValue cpVal = combustor["chamberPressure"];
             if (cpVal.isObject()) {
@@ -1000,23 +1145,17 @@ bool MainWindow::loadPresetFromJson(const QString& filename) {
 
         if (combustor.contains("mixtureRatio"))
             ui->spinMixtureRatio->setValue(combustor["mixtureRatio"].toDouble());
-
-        if (combustor.contains("initialEnthalpy_kJ_kg"))
-            m_currentConfig.initial_enthalpy =
-                combustor["initialEnthalpy_kJ_kg"].toDouble() * 1000.0;
     }
 
     // 读取喷管条件
     if (root.contains("nozzleConditions")) {
         QJsonObject nozzle = root["nozzleConditions"].toObject();
-
         if (nozzle.contains("exitPressure_atm"))
             ui->spinExitPressure->setValue(nozzle["exitPressure_atm"].toDouble());
     }
 
-    // 检测推进剂类型并选择适当的配置
-    QString propellantType = "LOX_LH2";  // 默认
-
+    // 检测推进剂类型
+    QString propellantType = "LOX_LH2";
     if (root.contains("propellant")) {
         QJsonObject propellant = root["propellant"].toObject();
         if (propellant.contains("type")) {
@@ -1024,21 +1163,114 @@ bool MainWindow::loadPresetFromJson(const QString& filename) {
         }
     }
 
-    // 根据推进剂类型选择热力学配置
-    if (propellantType == "LOX_CH4" || propellantType == "CH4_LOX") {
-        // 使用 LOX/CH4 配置 (Raptor)
-        init_lox_ch4_config(&m_currentConfig);
-        ui->textLog->append("[信息] 使用 LOX/CH4 推进剂配置 (8种产物)");
-    } else {
-        // 默认使用 LOX/LH2 配置
-        const EnginePreset* defaultPreset = get_engine_preset(ENGINE_RS25);
-        if (defaultPreset) {
-            m_currentConfig = defaultPreset->config;
+    // ========== 版本2：从 JSON 读取完整热力数据 ==========
+    if (version >= 2 && root.contains("thermoData")) {
+        QJsonObject thermoData = root["thermoData"].toObject();
+
+        // 清空当前配置
+        memset(&m_currentConfig, 0, sizeof(PropellantInput));
+
+        // 读取基本配置
+        if (thermoData.contains("speciesConfig")) {
+            QJsonObject speciesConfig = thermoData["speciesConfig"].toObject();
+            m_currentConfig.num_propellants = speciesConfig["numPropellants"].toInt();
+            m_currentConfig.num_elements = speciesConfig["numElements"].toInt();
+            m_currentConfig.num_species = speciesConfig["numSpecies"].toInt();
+            m_currentConfig.num_condensed = speciesConfig["numCondensed"].toInt();
         }
-        ui->textLog->append("[信息] 使用 LOX/LH2 推进剂配置 (6种产物)");
+
+        // 读取元素原子量
+        if (thermoData.contains("elementWeights")) {
+            QJsonArray elemWeights = thermoData["elementWeights"].toArray();
+            for (int i = 0; i < elemWeights.size() && i < MAX_ELEMENTS; i++) {
+                QJsonObject elem = elemWeights[i].toObject();
+                m_currentConfig.element_weight[i] = elem["weight"].toDouble();
+            }
+        }
+
+        // 读取组元-元素原子数矩阵 St_aij
+        if (thermoData.contains("St_aij")) {
+            QJsonArray stAij = thermoData["St_aij"].toArray();
+            for (int p = 0; p < stAij.size() && p < MAX_PROPELLANTS; p++) {
+                QJsonArray row = stAij[p].toArray();
+                for (int e = 0; e < row.size() && e < MAX_ELEMENTS; e++) {
+                    m_currentConfig.St_aij[p][e] = row[e].toDouble();
+                }
+            }
+        }
+
+        // 读取产物-元素原子数矩阵 Aij
+        if (thermoData.contains("Aij")) {
+            QJsonArray aij = thermoData["Aij"].toArray();
+            for (int e = 0; e < aij.size() && e < MAX_ELEMENTS; e++) {
+                QJsonArray row = aij[e].toArray();
+                for (int s = 0; s < row.size() && s < MAX_SPECIES; s++) {
+                    m_currentConfig.Aij[e][s] = row[s].toDouble();
+                }
+            }
+        }
+
+        // 读取 NASA 9 系数
+        if (thermoData.contains("nasa9Coefficients")) {
+            QJsonArray nasa9Array = thermoData["nasa9Coefficients"].toArray();
+            for (int s = 0; s < nasa9Array.size() && s < MAX_SPECIES; s++) {
+                QJsonObject speciesObj = nasa9Array[s].toObject();
+                m_currentConfig.nasa9[s].num_intervals = speciesObj["numIntervals"].toInt();
+
+                QJsonArray intervals = speciesObj["intervals"].toArray();
+                for (int i = 0; i < intervals.size() && i < NASA9_TEMP_RANGES; i++) {
+                    QJsonObject interval = intervals[i].toObject();
+                    m_currentConfig.nasa9[s].intervals[i].T_min = interval["T_min"].toDouble();
+                    m_currentConfig.nasa9[s].intervals[i].T_max = interval["T_max"].toDouble();
+
+                    QJsonArray coeffs = interval["coefficients"].toArray();
+                    for (int c = 0; c < coeffs.size() && c < NASA9_COEFF_NUM; c++) {
+                        m_currentConfig.nasa9[s].intervals[i].a[c] = coeffs[c].toDouble();
+                    }
+                }
+            }
+        }
+
+        // 读取初始焓 (从 combustorConditions)
+        if (root.contains("combustorConditions")) {
+            QJsonObject combustor = root["combustorConditions"].toObject();
+            if (combustor.contains("initialEnthalpy_kJ_kg")) {
+                m_currentConfig.initial_enthalpy =
+                    combustor["initialEnthalpy_kJ_kg"].toDouble() * 1000.0;  // kJ/kg -> J/kg
+            }
+        }
+
+        // 设置默认值
+        m_currentConfig.initial_temperature = 298.15;
+
+        ui->textLog->append(QString("[信息] 从 JSON v%1 加载完整热力数据 (%2 种组分, %3 种元素)")
+                                .arg(version)
+                                .arg(m_currentConfig.num_species)
+                                .arg(m_currentConfig.num_elements));
+    } else {
+        // ========== 版本1：回退到硬编码配置（兼容旧文件） ==========
+        if (propellantType == "LOX_CH4" || propellantType == "CH4_LOX") {
+            init_lox_ch4_config(&m_currentConfig);
+            ui->textLog->append("[信息] 使用 LOX/CH4 推进剂配置 (8种产物) - 硬编码");
+        } else {
+            const EnginePreset* defaultPreset = get_engine_preset(ENGINE_RS25);
+            if (defaultPreset) {
+                m_currentConfig = defaultPreset->config;
+            }
+            ui->textLog->append("[信息] 使用 LOX/LH2 推进剂配置 (6种产物) - 硬编码");
+        }
+
+        // 读取初始焓
+        if (root.contains("combustorConditions")) {
+            QJsonObject combustor = root["combustorConditions"].toObject();
+            if (combustor.contains("initialEnthalpy_kJ_kg")) {
+                m_currentConfig.initial_enthalpy =
+                    combustor["initialEnthalpy_kJ_kg"].toDouble() * 1000.0;
+            }
+        }
     }
 
-    // 更新质量分数
+    // 更新质量分数（根据界面上的混合比）
     onMixtureRatioChanged(ui->spinMixtureRatio->value());
 
     // 更新热力数据显示
