@@ -2,7 +2,7 @@
 
 火箭发动机热力性能计算程序 | Rocket Engine Thermodynamic Performance Calculator
 
-[![Release](https://img.shields.io/badge/Release-v1.0.0-blue.svg)](https://github.com/wztxy/Principles-of-Rocket-Engines-Project-2/releases)
+[![Release](https://img.shields.io/badge/Release-v1.1.0-blue.svg)](https://github.com/wztxy/Principles-of-Rocket-Engines-Project-2/releases)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![Qt](https://img.shields.io/badge/Qt-6.x-green.svg)](https://www.qt.io/)
 [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-blue.svg)]()
@@ -19,6 +19,7 @@ SLS ThermoCalc 是一个基于 Qt 开发的火箭发动机热力性能计算程�
 - **多种发动机预设**：RS-25 (SSME)、RL-10B2、Raptor、YF-77
 - **多推进剂支持**：LOX/LH₂（6 种产物）、LOX/CH₄（8 种产物）
 - **完整输出**：比冲、特征速度、推力系数、马赫数、比热比等
+- **JSON 预设配置**：完整热力数据可编辑，支持自定义推进剂和发动机
 
 ## 编译与运行
 
@@ -66,7 +67,7 @@ Principles-of-Rocket-Engines-Project-2/
 │   │   ├── propellant_db.c   # NASA 9 系数数据库
 │   │   ├── mainwindow.cpp    # Qt 主窗口
 │   │   └── ...
-│   ├── presets/              # 发动机预设 JSON 文件
+│   ├── presets/              # 发动机预设 JSON 文件 (含完整 NASA 9 热力数据)
 │   └── ui/                   # Qt Designer UI 文件
 │
 ├── doc/                      # 项目文档
@@ -103,6 +104,28 @@ Principles-of-Rocket-Engines-Project-2/
 
 本项目采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可证。
 
+## 更新日志
+
+### v1.1.0 (2025-12-04)
+
+- **新特性**：JSON 预设文件包含完整热力数据（NASA 9 系数、Aij 矩阵等），支持用户自定义推进剂配置
+- **新特性**：修改 JSON 预设文件中的热力参数后，计算结果会反映修改
+- **优化**：简化发动机选择下拉框显示
+- **修复**：Raptor 发动机元素权重显示顺序（H, O, C 统一）
+- **修复**：各发动机初始焓根据 O/F 比正确计算
+
+### v1.0.2 (2025-12-02)
+
+- 修复 Windows 平台 VC++ 运行时依赖问题
+- 移除界面中冗余的"总焓"显示
+
+### v1.0.0 (2025-12-01)
+
+- 初始版本发布
+- 支持 LOX/LH₂ 和 LOX/CH₄ 推进剂
+- 基于最小吉布斯自由能法的燃烧室计算
+- 等熵膨胀喷管计算
+
 ## 参考
 
 - NASA CEA (Chemical Equilibrium with Applications) 数据
@@ -113,4 +136,4 @@ Principles-of-Rocket-Engines-Project-2/
 
 _本项目为北京航空航天大学宇航学院宇航推进系火箭发动机原理课程大作业_
 
-_版本：v1.0.0 | 2025 年 12 月_
+_版本：v1.1.0 | 2025 年 12 月_
