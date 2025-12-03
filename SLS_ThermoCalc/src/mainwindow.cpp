@@ -55,7 +55,6 @@ void MainWindow::setupUI() {
 
     // 初始化燃烧室结果表 - 简洁格式，单位用括号
     QStringList chamberParams = {"燃烧室温度 Tc (K)",
-                                 "总焓 H (kJ/kg)",
                                  "总熵 S (kJ/kg/K)",
                                  "燃烧产物平均摩尔质量 (g/mol)",
                                  "燃烧产物平均密度 (kg/m³)",
@@ -226,25 +225,24 @@ QString MainWindow::ensurePresetsFolder() {
 }
 
 void MainWindow::createDefaultPresets(const QString& presetsDir) {
-    // 检查是否已有预设文件
-    QDir dir(presetsDir);
-    QStringList existing = dir.entryList(QStringList() << "*.json", QDir::Files);
+    // 定义必需的预设文件列表
+    QStringList requiredPresets = {"RS-25_SSME.json", "RL-10B2.json", "Raptor.json", "YF-77.json"};
 
-    // 过滤掉模板文件
-    int realPresets = 0;
-    for (const QString& f : existing) {
-        if (!f.contains("template", Qt::CaseInsensitive) &&
-            !f.contains("README", Qt::CaseInsensitive)) {
-            realPresets++;
+    // 检查哪些预设文件缺失
+    QStringList missingPresets;
+    for (const QString& preset : requiredPresets) {
+        if (!QFile::exists(presetsDir + "/" + preset)) {
+            missingPresets.append(preset);
         }
     }
 
-    if (realPresets > 0) {
-        // 已有预设文件，不需要创建
+    if (missingPresets.isEmpty()) {
+        // 所有必需的预设文件都存在
         return;
     }
 
-    ui->textLog->append("[信息] 正在创建默认预设文件...");
+    ui->textLog->append(QString("[信息] 检测到 %1 个预设文件缺失，正在创建...")
+                            .arg(missingPresets.size()));
 
     // 辅助函数：创建预设JSON
     auto createPresetJson = [](const QString& name, const QString& desc, double thrust, double isp,
@@ -299,8 +297,11 @@ void MainWindow::createDefaultPresets(const QString& presetsDir) {
         return QJsonDocument(root).toJson(QJsonDocument::Indented);
     };
 
-    // 写入预设文件
-    auto writePreset = [&](const QString& filename, const QByteArray& content) {
+    // 写入预设文件（仅当文件不存在时）
+    auto writePresetIfMissing = [&](const QString& filename, const QByteArray& content) {
+        if (!missingPresets.contains(filename)) {
+            return false;  // 文件已存在，跳过
+        }
         QFile file(presetsDir + "/" + filename);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             file.write(content);
@@ -313,31 +314,33 @@ void MainWindow::createDefaultPresets(const QString& presetsDir) {
     int created = 0;
 
     // RS-25 (SSME) - SLS核心级
-    if (writePreset(
+    if (writePresetIfMissing(
             "RS-25_SSME.json",
             createPresetJson("RS-25 (SSME)", "Space Shuttle Main Engine - SLS Core Stage (LOX/LH2)",
-                             2279, 452.3, 20.64, 6.03, -987.0, "LOX_LH2", 0.05)))
+                             2279, 452.3, 20.64, 6.03, -1685.0, "LOX_LH2", 0.05)))
         created++;
 
     // RL-10B2 - 上面级
-    if (writePreset("RL-10B2.json",
+    if (writePresetIfMissing("RL-10B2.json",
                     createPresetJson("RL-10B2", "Pratt & Whitney RL10B-2 - Upper Stage (LOX/LH2)",
                                      110.1, 465.5, 4.36, 5.88, -987.0, "LOX_LH2", 0.001)))
         created++;
 
     // SpaceX Raptor (LOX/CH4)
-    if (writePreset(
+    if (writePresetIfMissing(
             "Raptor.json",
             createPresetJson("SpaceX Raptor", "Full-Flow Staged Combustion Engine (LOX/CH4)", 2260,
                              363, 30.0, 3.6, -2875.72, "LOX_CH4", 1.0)))
         created++;
 
     // YF-77 - 长征五号
-    if (writePreset("YF-77.json", createPresetJson("YF-77", "长征五号芯一级发动机 (LOX/LH2)", 700,
+    if (writePresetIfMissing("YF-77.json", createPresetJson("YF-77", "长征五号芯一级发动机 (LOX/LH2)", 700,
                                                    430, 10.2, 5.5, -987.0, "LOX_LH2", 0.1)))
         created++;
 
-    ui->textLog->append(QString("[信息] 已创建 %1 个默认预设文件").arg(created));
+    if (created > 0) {
+        ui->textLog->append(QString("[信息] 已创建 %1 个缺失的预设文件").arg(created));
+    }
 }
 
 void MainWindow::loadPresetsFromFolder() {
@@ -585,7 +588,6 @@ void MainWindow::displayChamberResults(const ChamberResult& chamber) {
 
     int row = 0;
     setTableValue(row++, formatNumber(chamber.temperature, 2));
-    setTableValue(row++, formatNumber(chamber.total_enthalpy / 1000.0, 2));
     setTableValue(row++, formatNumber(chamber.total_entropy / 1000.0, 4));
     setTableValue(row++, formatNumber(chamber.mean_molecular_weight, 3));
     setTableValue(row++, formatNumber(chamber.density, 3));

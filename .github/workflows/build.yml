@@ -137,6 +137,25 @@ jobs:
           xcopy presets release\presets\ /E /I
           mkdir release\config
 
+      - name: Add VC++ Runtime
+        working-directory: SLS_ThermoCalc
+        shell: pwsh
+        run: |
+          # 下载 VC++ Redistributable 安装包
+          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "release/vc_redist.x64.exe"
+          
+          # 创建启动说明
+          @"
+          SLS ThermoCalc - 火箭发动机热力计算程序
+          =========================================
+
+          首次运行说明：
+          1. 如果双击 SLS_ThermoCalc.exe 没有反应，请先安装 vc_redist.x64.exe
+          2. 安装完成后再运行 SLS_ThermoCalc.exe
+
+          如遇到问题，请在命令行中运行程序查看错误信息。
+          "@ | Out-File -FilePath "release/README.txt" -Encoding UTF8
+
       - name: Create ZIP
         working-directory: SLS_ThermoCalc
         shell: pwsh
