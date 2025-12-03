@@ -323,7 +323,7 @@ void MainWindow::createDefaultPresets(const QString& presetsDir) {
     // RL-10B2 - 上面级
     if (writePresetIfMissing("RL-10B2.json",
                     createPresetJson("RL-10B2", "Pratt & Whitney RL10B-2 - Upper Stage (LOX/LH2)",
-                                     110.1, 465.5, 4.36, 5.88, -987.0, "LOX_LH2", 0.001)))
+                                     110.1, 465.5, 4.36, 5.88, -996.0, "LOX_LH2", 0.001)))
         created++;
 
     // SpaceX Raptor (LOX/CH4)
@@ -335,7 +335,7 @@ void MainWindow::createDefaultPresets(const QString& presetsDir) {
 
     // YF-77 - 长征五号
     if (writePresetIfMissing("YF-77.json", createPresetJson("YF-77", "长征五号芯一级发动机 (LOX/LH2)", 700,
-                                                   430, 10.2, 5.5, -987.0, "LOX_LH2", 0.1)))
+                                                   430, 10.2, 5.5, -1031.0, "LOX_LH2", 0.1)))
         created++;
 
     if (created > 0) {
@@ -380,12 +380,8 @@ void MainWindow::loadPresetsFromFolder() {
         if (parsePresetInfo(fileInfo.absoluteFilePath(), info)) {
             m_presets.append(info);
 
-            // 添加到下拉框，显示名称和简要信息
-            QString displayText = QString("%1 (%2 MPa, O/F=%3)")
-                                      .arg(info.name)
-                                      .arg(info.chamberPressure, 0, 'f', 1)
-                                      .arg(info.mixtureRatio, 0, 'f', 2);
-            ui->comboEngine->addItem(displayText, m_presets.size() - 1);
+            // 添加到下拉框，只显示发动机名称
+            ui->comboEngine->addItem(info.name, m_presets.size() - 1);
             loadedCount++;
         }
     }

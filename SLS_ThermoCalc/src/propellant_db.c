@@ -139,7 +139,7 @@ void init_rs25_config(PropellantInput* input) { init_rs25_config_internal(input)
 void init_rl10_config(PropellantInput* input) {
     init_rs25_config_internal(input);
     input->chamber_pressure = 43.4;
-    input->initial_enthalpy = -987000.0; /* J/kg, RL-10 uses -987 kJ/kg */
+    input->initial_enthalpy = -996000.0; /* J/kg, RL-10B2 (O/F=5.88) */
     input->mass_fraction[0] = 0.1453;
     input->mass_fraction[1] = 0.8547;
 }
@@ -149,25 +149,25 @@ void init_lox_ch4_config(PropellantInput* input) {
     memset(input, 0, sizeof(PropellantInput));
 
     input->num_propellants = 2;
-    input->num_elements = 3; /* H, C, O */
+    input->num_elements = 3; /* H, O, C (统一顺序) */
     input->num_species = 8;  /* H2O, H2, OH, H, CO2, CO, O2, O */
     input->num_condensed = 0;
 
-    /* St_aij: CH4 (4H,1C,0O), O2 (0H,0C,2O) */
-    input->St_aij[0][0] = 4.0;
-    input->St_aij[0][1] = 1.0;
-    input->St_aij[0][2] = 0.0;
-    input->St_aij[1][0] = 0.0;
-    input->St_aij[1][1] = 0.0;
-    input->St_aij[1][2] = 2.0;
+    /* St_aij: CH4 (4H,0O,1C), O2 (0H,2O,0C) - 元素顺序 H,O,C */
+    input->St_aij[0][0] = 4.0;  /* CH4: H */
+    input->St_aij[0][1] = 0.0;  /* CH4: O */
+    input->St_aij[0][2] = 1.0;  /* CH4: C */
+    input->St_aij[1][0] = 0.0;  /* O2: H */
+    input->St_aij[1][1] = 2.0;  /* O2: O */
+    input->St_aij[1][2] = 0.0;  /* O2: C */
 
     /* O/F = 3.5 (typical for CH4/LOX) */
     input->mass_fraction[0] = 1.0 / (1.0 + 3.5); /* CH4: 0.222 */
     input->mass_fraction[1] = 3.5 / (1.0 + 3.5); /* O2: 0.778 */
 
-    input->element_weight[0] = 1.00794; /* H */
-    input->element_weight[1] = 12.0107; /* C */
-    input->element_weight[2] = 15.9994; /* O */
+    input->element_weight[0] = 1.00794;  /* H */
+    input->element_weight[1] = 15.9994;  /* O */
+    input->element_weight[2] = 12.0107;  /* C */
 
     /* [0] H2O - Cox,1989. Woolley,1987. */
     input->nasa9[0].num_intervals = 2;
@@ -262,10 +262,10 @@ void init_lox_ch4_config(PropellantInput* input) {
                        -5.796231540E-12, 7.191720164E-17, 8.890942630E+05, -2.181728151E+02);
 
     /* Aij matrix: 元素(H,C,O) × 产物(H2O,H2,OH,H,CO2,CO,O2,O)
-     * 来自程序/test.cpp:
+     * 来自程序/test.cpp (重排为 H,O,C 顺序):
      * Aij[0] = {2,2,1,1,0,0,0,0}  H含量
-     * Aij[1] = {0,0,0,0,1,1,0,0}  C含量
-     * Aij[2] = {1,0,1,0,2,1,2,1}  O含量
+     * Aij[1] = {1,0,1,0,2,1,2,1}  O含量
+     * Aij[2] = {0,0,0,0,1,1,0,0}  C含量
      */
     /* H含量 */
     input->Aij[0][0] = 2.0; /* H2O */
@@ -277,25 +277,25 @@ void init_lox_ch4_config(PropellantInput* input) {
     input->Aij[0][6] = 0.0; /* O2 */
     input->Aij[0][7] = 0.0; /* O */
 
-    /* C含量 */
-    input->Aij[1][0] = 0.0; /* H2O */
-    input->Aij[1][1] = 0.0; /* H2 */
-    input->Aij[1][2] = 0.0; /* OH */
-    input->Aij[1][3] = 0.0; /* H */
-    input->Aij[1][4] = 1.0; /* CO2 */
-    input->Aij[1][5] = 1.0; /* CO */
-    input->Aij[1][6] = 0.0; /* O2 */
-    input->Aij[1][7] = 0.0; /* O */
-
     /* O含量 */
-    input->Aij[2][0] = 1.0; /* H2O */
+    input->Aij[1][0] = 1.0; /* H2O */
+    input->Aij[1][1] = 0.0; /* H2 */
+    input->Aij[1][2] = 1.0; /* OH */
+    input->Aij[1][3] = 0.0; /* H */
+    input->Aij[1][4] = 2.0; /* CO2 */
+    input->Aij[1][5] = 1.0; /* CO */
+    input->Aij[1][6] = 2.0; /* O2 */
+    input->Aij[1][7] = 1.0; /* O */
+
+    /* C含量 */
+    input->Aij[2][0] = 0.0; /* H2O */
     input->Aij[2][1] = 0.0; /* H2 */
-    input->Aij[2][2] = 1.0; /* OH */
+    input->Aij[2][2] = 0.0; /* OH */
     input->Aij[2][3] = 0.0; /* H */
-    input->Aij[2][4] = 2.0; /* CO2 */
+    input->Aij[2][4] = 1.0; /* CO2 */
     input->Aij[2][5] = 1.0; /* CO */
-    input->Aij[2][6] = 2.0; /* O2 */
-    input->Aij[2][7] = 1.0; /* O */
+    input->Aij[2][6] = 0.0; /* O2 */
+    input->Aij[2][7] = 0.0; /* O */
 
     input->chamber_pressure = 300.0;      /* atm, typical for Raptor */
     input->initial_enthalpy = -2875720.0; /* J/kg, from 程序/test.cpp */
