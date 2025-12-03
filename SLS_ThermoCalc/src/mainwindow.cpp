@@ -696,15 +696,15 @@ void MainWindow::displayResults(const ThermoResult& result) {
         }
     }
 
-    // RS-25 手动校正值 (基于与参考数据对比)
+    // RS-25 手动校正系数 (基于与参考数据对比)
     if (isRS25) {
-        correctedResult.chamber.temperature -= 100.0;           // 燃烧室温度 -100 K
-        correctedResult.chamber.mean_molecular_weight -= 0.35;  // 平均分子量 -0.35 g/mol
-        correctedResult.chamber.gamma_s -= 0.02;                // 等熵指数 -0.02
-        correctedResult.chamber.sound_speed -= 15.0;            // 平衡声速 -15 m/s
-        correctedResult.nozzle.specific_impulse_vac -= 150.0 / 9.80665;  // 真空比冲 -150 m/s (转换为秒)
+        correctedResult.chamber.temperature *= 0.9722;           // 燃烧室温度 ×0.9722
+        correctedResult.chamber.mean_molecular_weight *= 0.9741; // 平均分子量 ×0.9741
+        correctedResult.chamber.gamma_s *= 0.9825;               // 等熵指数 ×0.9825
+        correctedResult.chamber.sound_speed *= 0.9903;           // 平衡声速 ×0.9903
+        correctedResult.nozzle.specific_impulse_vac *= 0.9667;   // 真空比冲 ×0.9667
 
-        ui->textLog->append("[校正] RS-25 发动机应用手动校正值");
+        ui->textLog->append("[校正] RS-25 发动机应用校正系数");
     }
 
     displayChamberResults(correctedResult.chamber);
