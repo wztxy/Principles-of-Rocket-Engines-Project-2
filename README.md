@@ -104,28 +104,6 @@ Principles-of-Rocket-Engines-Project-2/
 
 本项目采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可证。
 
-## 更新日志
-
-### v1.1.0 (2025-12-04)
-
-- **新特性**：JSON 预设文件包含完整热力数据（NASA 9 系数、Aij 矩阵等），支持用户自定义推进剂配置
-- **新特性**：修改 JSON 预设文件中的热力参数后，计算结果会反映修改
-- **优化**：简化发动机选择下拉框显示
-- **修复**：Raptor 发动机元素权重显示顺序（H, O, C 统一）
-- **修复**：各发动机初始焓根据 O/F 比正确计算
-
-### v1.0.2 (2025-12-02)
-
-- 修复 Windows 平台 VC++ 运行时依赖问题
-- 移除界面中冗余的"总焓"显示
-
-### v1.0.0 (2025-12-01)
-
-- 初始版本发布
-- 支持 LOX/LH₂ 和 LOX/CH₄ 推进剂
-- 基于最小吉布斯自由能法的燃烧室计算
-- 等熵膨胀喷管计算
-
 ## 参考
 
 - NASA CEA (Chemical Equilibrium with Applications) 数据
